@@ -13,13 +13,14 @@ order to enable developers to build powerful MIDI software on top..
 
 import Native.WebMidi
 import Dict exposing (Dict, empty)
+import Task exposing (Task, andThen, succeed)
 
 
 {-| This interface represents a MIDI input or output port.  -}
 type alias MIDIPort = {
-    id : String
+    name         : String
   , manufacturer : String
-  , name : String
+  , version      : String
   }
 
 {-| This interface provides the methods to list MIDI input and output
@@ -30,6 +31,21 @@ type alias MIDIAccess = {
   , sysexEnabled : Bool
   }
 
+type alias Settings =
+    { sysex : Bool
+    , onChange : Maybe (Task () ())
+    , midiNote : Maybe (Signal MidiNote)
+    }
+
+{-| The default settings used by MIDIaccess -}
+defaultSettings : Settings
+defaultSettings =
+    { sysex = False
+    , onChange = Nothing
+    , midiNote = Nothing
+    }
+
 {-| Obtaining Access to MIDI Devices -}
-requestMIDIAccess : Bool -> MIDIAccess
-requestMIDIAccess sysex = MIDIAccess Dict.empty Dict.empty True
+requestMIDIAccess : Settings -> Task x MIDIAccess
+requestMIDIAccess =
+  Native.WebMidi.requestMIDIAccess
