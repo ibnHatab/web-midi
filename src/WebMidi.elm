@@ -7,7 +7,11 @@ order to enable developers to build powerful MIDI software on top..
 
 #basic access
 
-@docs requestMIDIAccess, MIDIAccess, MIDIPort
+@docs requestMIDIAccess, MIDIAccess, MIDIPort, Settings, defaultSettings
+
+#sending and receiving MIDI events
+
+@docs open, close, ID, MidiNote
 
 -}
 
@@ -23,21 +27,34 @@ type alias MIDIPort = {
   , version      : String
   }
 
+{-| Device ID -}
+type alias ID = String
+
 {-| This interface provides the methods to list MIDI input and output
 devices, and obtain access to an individual device.  -}
 type alias MIDIAccess = {
-    inputs : Dict String  MIDIPort
-  , outputs : Dict String MIDIPort
+    inputs : Dict ID  MIDIPort
+  , outputs : Dict ID MIDIPort
   , sysexEnabled : Bool
   }
 
+{-| MIDI event -}
+type alias MidiNote =
+  { noteOn    : Bool
+  , pitch     : Int
+  -- , velocity  : Int
+  -- , timestamp : Int
+  -- , sourceId  : String
+  }
+
+{-| Settings used by access to MIDI devices -}
 type alias Settings =
     { sysex : Bool
-    , onChange : Maybe (Task () ())
+    , onChange : Maybe (String -> Task () ())
     , midiNote : Maybe (Signal MidiNote)
     }
 
-{-| The default settings used by MIDIaccess -}
+{-| The default settings used by access to MIDI devices -}
 defaultSettings : Settings
 defaultSettings =
     { sysex = False
@@ -49,3 +66,13 @@ defaultSettings =
 requestMIDIAccess : Settings -> Task x MIDIAccess
 requestMIDIAccess =
   Native.WebMidi.requestMIDIAccess
+
+{-| Open MIDI Devices -}
+open : ID -> Signal MidiNote -> Task x MIDIPort
+open =
+  Native.WebMidi.open
+
+{-| Close MIDI Devices -}
+close : ID -> Task x MIDIPort
+close =
+  Native.WebMidi.close

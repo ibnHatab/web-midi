@@ -12,12 +12,14 @@ Elm.Native.WebMidi.make = function(localRuntime) {
     var Dict = Elm.Dict.make(localRuntime);
     var Task = Elm.Native.Task.make(localRuntime);
 
+    var midi = null;  // global MIDIAccess object
 
     function requestMIDIAccess (settings) {
         return Task.asyncFunction(function(callback) {
 
             function onMIDISuccess (midiAccess) {
-                console.log("onMIDISuccess")
+                midi = midiAccess;
+
                 var elmMidiAccess =  {
                     _: {},
                     inputs: Dict.empty,
@@ -39,29 +41,71 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         A3(Dict.insert, port.id, value, elmMidiAccess.outputs);
                 });
 
-		// start
-		if (settings.onStart.ctor === 'Just')
+		// MIDI device connect/disconnect
+		if (settings.onChange.ctor === 'Just')
 		{
-		    req.addEventListener('loadStart', function() {
-			var task = settings.onStart._0;
+                    midiAccess.onstatechange = function(event) {
+			var task = settings.onChange._0(event.port.id);
 			Task.spawn(task);
-		    });
-		}
-
+		    };
+	        }
 
                 return callback(Task.succeed(elmMidiAccess))
             }
 
-
             navigator.requestMIDIAccess({
                 sysex: settings.sysex
             }).then(onMIDISuccess, function(error) {
-                console.log("onMIDIError: " + error)
 		return callback(Task.fail(new Error('No Web MIDI support')));
 	    });
         })};
 
+    var Signal = Elm.Native.Signal.make(localRuntime);
+    var Port = Elm.Native.Port.make(localRuntime);
+
+    function open (id, signal) {
+        return Task.asyncFunction(function(callback) {
+            var dev = midi.inputs.get(id) || midi.outputs.get(id);
+            dev.open().then(
+                function(port) {
+                    if(port.type === "output") {
+                        var midiOut = Port.outboundSignal("midiOut-" + signal.name,
+                                                          function (v) {
+                                                              return {noteOn: v.noteOn
+                                                                      ,pitch: v.pitch};
+                                                          },
+                                                          signal);
+
+                        var midiOutSignal = localRuntime.ports["midiOut-" + signal.name];
+
+                        midiOutSignal.subscribe(function(note) {
+                            console.log(note);
+                            port.send([ 0x90, 0x45, 0x7f ] );
+                        });
+                    } else if (port.type === "input") {
+                        port.onmidimessage = function(data) {
+                            console.log(data);
+                            var note = { ctor: "MidiNote", _0: true, _1: 43 };
+                            localRuntime.notify(signal.id, note)
+                        }
+                    }
+
+                    return callback(Task.succeed(port))
+                },
+                function(error) {
+                    return callback(Task.fail(error))
+                } );
+        });
+    }
+
+    function close (id) {
+        return Task.asyncFunction(function(callback) {
+
+        });
+    }
     return localRuntime.Native.WebMidi.values = {
-        requestMIDIAccess: requestMIDIAccess
+        requestMIDIAccess: requestMIDIAccess,
+        open: F2(open),
+        close: close
     };
 };
