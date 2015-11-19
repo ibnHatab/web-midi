@@ -9,7 +9,7 @@ import Mouse
 import Time
 
 
-perf = Signal.sampleOn (Time.every Time.second) WebMidi.performance
+perf = Signal.sampleOn (Time.every Time.second) Mouse.position
 
 main = Signal.map show perf
        -- Mouse.position

@@ -7,7 +7,8 @@
         "src"
     ],
     "exposed-modules": [
-        "WebMidi"
+        "WebMidi",
+        "Music"
     ],
     "native-modules": true,
     "dependencies": {
