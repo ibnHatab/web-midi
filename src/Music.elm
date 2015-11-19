@@ -8,20 +8,25 @@ module Music where
 @docs Music, Dur, IName, trans
 
 # Arifmetic
-@docs Ratio, normalizeR, addR, multiplyR, toFloatR
+@docs normalizeR, addR, multiplyR, toFloatR
 @docs (:+:), (:=:), (!!), (:%:)
 
 # Representation
 @docs AbsPitch, absPitch, pitches, pitch, pcToInt
 
-
-@docs NoteDecorator,cf,c, cs, df, d, ds, ef, e, es
+@docs cf,c, cs, df, d, ds, ef, e', es
 @docs ff, f, fs, gf, g, gs, af, a, as', bf, b, bs
 
--}
+# Duration
+@docs wn,  hn,  qn,  en,  sn,  tn
+@docs dhn, dqn, den, dsn, zero
 
-{- This module provides basic musical concepts.
+# Music
+@docs wnr, hnr, qnr, enr, snr, tnr
+@docs dhnr, dqnr, denr, dsnr
 
+# Higher-Level Constructions
+@docs line, chord, delay, repeatM
 
 -}
 
@@ -41,27 +46,30 @@ double its frequency
 -}
 type alias Octave = Int
 
-{-| Ratio data type -}
-type Ratio = Ratio Int Int
-{-| Normalize Ration post arophmetic -}
-normalizeR : Ratio -> Ratio
-normalizeR (Ratio p q) =
+{-| Durations and tempo scalings are represented using rational numbers -}
+type Dur = Dur Int Int
+{-| Normalize Durn post arophmetic -}
+normalizeR : Dur -> Dur
+normalizeR (Dur p q) =
   let
     gcd : Int -> Int -> Int
     gcd a b = if b == 0 then a else gcd b (a % b)
     k = gcd p q * (if q < 0 then -1 else 1)
-  in Ratio (p // k) (q // k)
-{-| Ration addition -}
-addR : Ratio -> Ratio -> Ratio
-addR (Ratio a b) (Ratio c d) =
-  normalizeR (Ratio (a * d + b * c) (b * d))
-{-| Ratio multiplication  -}
-multiplyR : Ratio -> Ratio -> Ratio
-multiplyR (Ratio a b) (Ratio c d) =
-  normalizeR (Ratio (a * c) (b * d))
+  in Dur (p // k) (q // k)
+
+{-| Durn addition -}
+addR : Dur -> Dur -> Dur
+addR (Dur a b) (Dur c d) =
+  normalizeR (Dur (a * d + b * c) (b * d))
+
+{-| Dur multiplication  -}
+multiplyR : Dur -> Dur -> Dur
+multiplyR (Dur a b) (Dur c d) =
+  normalizeR (Dur (a * c) (b * d))
+
 {-| Radio to Float -}
-toFloatR : Ratio -> Float
-toFloatR (Ratio a b) = Basics.toFloat a / Basics.toFloat b
+toFloatR : Dur -> Float
+toFloatR (Dur a b) = Basics.toFloat a / Basics.toFloat b
 
 
 
@@ -76,7 +84,7 @@ type Music = Note Pitch Dur
           | Rest Dur
           | Sequence Music Music
           | Parallel Music Music
-          | Tempo  (Ratio Int) Music
+          | Tempo  (Dur Int) Music
           | Trans  Int Music
           | Instr  IName Music
 
@@ -88,8 +96,6 @@ type Music = Note Pitch Dur
 (:=:) : Music -> Music -> Music
 (:=:) = Parallel
 
-{-| Durations and tempo scalings are represented using rational numbers -}
-type alias Dur = Ratio Int
 
 {-| General MIDI Standard instruments -}
 type IName
@@ -185,97 +191,152 @@ trans i p = pitch (absPitch p + i)
 --   : Octave -> Dur -> Music
 
 {-|-}
-type alias NoteDecorator = Octave -> Dur -> Music
-
-{-|-}
-cf : NoteDecorator
+cf : Octave -> Dur -> Music
 cf o = Note (Cf,o)
 {-|-}
-c : NoteDecorator
+c : Octave -> Dur -> Music
 c o = Note (C,o)
 
 {-|-}
-cs : NoteDecorator
+cs : Octave -> Dur -> Music
 cs o = Note (Cs,o)
 {-|-}
-df : NoteDecorator
+df : Octave -> Dur -> Music
 df o = Note (Df,o)
 {-|-}
-d : NoteDecorator
+d : Octave -> Dur -> Music
 d  o = Note (D,o)
 {-|-}
-ds : NoteDecorator
+ds : Octave -> Dur -> Music
 ds o = Note (Ds,o)
 {-|-}
-ef : NoteDecorator
+ef : Octave -> Dur -> Music
 ef o = Note (Ef,o)
 {-|-}
-e : NoteDecorator
-e  o = Note (E,o)
+e' : Octave -> Dur -> Music
+e'  o = Note (E,o)
 {-|-}
-es : NoteDecorator
+es : Octave -> Dur -> Music
 es o = Note (Es,o)
 {-|-}
-ff : NoteDecorator
+ff : Octave -> Dur -> Music
 ff o = Note (Ff,o)
 {-|-}
-f : NoteDecorator
+f : Octave -> Dur -> Music
 f  o = Note (F,o)
 {-|-}
-fs : NoteDecorator
+fs : Octave -> Dur -> Music
 fs o = Note (Fs,o)
 {-|-}
-gf : NoteDecorator
+gf : Octave -> Dur -> Music
 gf o = Note (Gf,o)
 {-|-}
-g : NoteDecorator
+g : Octave -> Dur -> Music
 g  o = Note (G,o)
 {-|-}
-gs : NoteDecorator
+gs : Octave -> Dur -> Music
 gs o = Note (Gs,o)
 {-|-}
-af : NoteDecorator
+af : Octave -> Dur -> Music
 af o = Note (Af,o)
 {-|-}
-a : NoteDecorator
+a : Octave -> Dur -> Music
 a  o = Note (A,o)
 {-|-}
-as' : NoteDecorator
+as' : Octave -> Dur -> Music
 as' o = Note (As,o)
 {-|-}
-bf : NoteDecorator
+bf : Octave -> Dur -> Music
 bf o = Note (Bf,o)
 {-|-}
-b : NoteDecorator
+b : Octave -> Dur -> Music
 b  o = Note (B,o)
 {-|-}
-bs : NoteDecorator
+bs : Octave -> Dur -> Music
 bs o = Note (Bs,o)
 
-{-| Ratio shorthand -}
-(:%:) : Int -> Int -> Ratio
-(:%:) = Ratio
+{-| Dur shorthand -}
+(:%:) : Int -> Int -> Dur
+(:%:) = Dur
 
--- wn  = 1:%:1
--- wnr  = Rest wn      -- whole
+{-| zero delay -}
+zero : Dur
+zero = 0 :%: 1
 
--- hn  = 1 :%: 2
--- hnr  = Rest hn      -- half
+{-| whale -}
+wn : Dur
+wn  = 1:%:1
+{-| half -}
+hn : Dur
+hn  = 1 :%: 2
+{-| quarter -}
+qn : Dur
+qn  = 1 :%: 4
+{-| eight -}
+en : Dur
+en  = 1 :%: 8
+{-| sixteenth -}
+sn : Dur
+sn  = 1 :%: 16
+{-| thirty-second -}
+tn : Dur
+tn  = 1 :%: 32
+{-| dotted half -}
+dhn : Dur
+dhn = 3 :%: 4
+{-| dotted quarter -}
+dqn : Dur
+dqn = 3 :%: 8
+{-| dotted eight -}
+den : Dur
+den = 3 :%: 16
+{-| dotted sixteenth -}
+dsn : Dur
+dsn = 3 :%: 32
 
--- qn  = 1 :%: 4
--- qnr  = Rest qn      -- quarter
--- en  = 1 :%: 8
--- enr  = Rest en      -- eight
--- sn  = 1 :%: 16
--- snr  = Rest sn      -- sixteenth
--- tn  = 1 :%: 32
--- tnr  = Rest tn      -- thirty-second
--- dhn = 3 :%: 4
--- dhnr = Rest dhn     -- dotted half
--- dqn = 3 :%: 8
--- dqnr = Rest dqn     -- dotted quarter
--- den = 3 :%: 16
--- denr = Rest den     -- dotted eighth
--- dsn = 3 :%: 32
+{-| whole -}
+wnr : Music
+wnr  = Rest wn
+{-| half -}
+hnr : Music
+hnr  = Rest hn
+{-| quarter -}
+qnr : Music
+qnr  = Rest qn
+{-| eight -}
+enr : Music
+enr  = Rest en
+{-| sixteenth -}
+snr : Music
+snr  = Rest sn
+{-| thirty-second -}
+tnr : Music
+tnr  = Rest tn
+{-| dotted half -}
+dhnr : Music
+dhnr = Rest dhn
+{-| dotted quarter -}
+dqnr : Music
+dqnr = Rest dqn
+{-| dotted eighth -}
+denr : Music
+denr = Rest den
+{-| dotted sixteenth -}
+dsnr : Music
+dsnr = Rest dsn
 
--- dsnr = Rest dsn     -- dotted sixteenth
+{-| a line or melody -}
+line : List Music -> Music
+line  = List.foldr (:+:) (Rest zero)
+
+{-| chord -}
+chord : List Music -> Music
+chord = List.foldr (:=:) (Rest zero)
+
+{-| delay -}
+delay : Dur -> Music -> Music
+delay d m = Rest d :+: m
+
+{-| repeat music -}
+repeatM : Int -> Music -> Music
+repeatM n m =  List.repeat n m |> line
