@@ -1,17 +1,29 @@
 module WebMidi (..) where
 
-
 {-| This module provides access to the Web MIDI API; the API is
 designed to represent the low-level software protocol of MIDI, in
 order to enable developers to build powerful MIDI software on top..
 
-#basic access
+# Basic access to
+@docs requestMIDIAccess, Settings, MIDIAccess, MIDIPort
 
-@docs requestMIDIAccess, MIDIAccess, MIDIPort, Settings, defaultSettings
 
-#sending and receiving MIDI events
+@docs defaultSettings
 
-@docs open, close, ID, MidiNote
+# Wiring MIDI I/O devices with runtime signals.
+
+@docs open, close, ID
+
+# Sends a MIDI message to the specified device(s) at the specified
+  timestamp.
+
+@docs MidiNote, none
+
+
+# Utils to synchronously perform music
+
+@docs performance
+
 
 -}
 
@@ -41,28 +53,35 @@ type alias MIDIAccess = {
 {-| MIDI event -}
 type alias MidiNote =
   { noteOn    : Bool
-  , pitch     : Int
-  -- , velocity  : Int
-  -- , timestamp : Int
-  -- , sourceId  : String
+  , pitch     : (Int, Int)
+  , velocity  : Int
+  , timestamp : Int
+  , channel   : Int
   }
 
-{-| Settings used by access to MIDI devices -}
+{-| Not a Note
+-}
+none : MidiNote
+none = MidiNote False (0,0) 0 0 0
+
+{-| Settings used by access to MIDI devices and informing on
+configuration changes. -}
 type alias Settings =
-    { sysex : Bool
-    , onChange : Maybe (String -> Task () ())
-    , midiNote : Maybe (Signal MidiNote)
-    }
+  { sysex : Bool
+  , onChange : Maybe (String -> Task () ())
+  }
 
 {-| The default settings used by access to MIDI devices -}
 defaultSettings : Settings
 defaultSettings =
     { sysex = False
     , onChange = Nothing
-    , midiNote = Nothing
+--    , midiNote = Nothing
     }
 
-{-| Obtaining Access to MIDI Devices -}
+{-| Checks if the Web MIDI API is available and then tries to connect
+to the host's MIDI subsystem.
+-}
 requestMIDIAccess : Settings -> Task x MIDIAccess
 requestMIDIAccess =
   Native.WebMidi.requestMIDIAccess
@@ -76,3 +95,21 @@ open =
 close : ID -> Task x MIDIPort
 close =
   Native.WebMidi.close
+
+{-| The current performance time used in MIDI events. -}
+performance : Signal float
+performance =
+  Native.WebMidi.performance
+
+{-
+playNote : Address MidiNote -> MidiNote -> Task x ()
+playNote addr note =
+  Signal.send addr note
+
+stopNote
+
+sendControlChange
+
+sendSystemMessage
+
+-}

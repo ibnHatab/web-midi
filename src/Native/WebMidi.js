@@ -11,11 +11,50 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
     var Dict = Elm.Dict.make(localRuntime);
     var Task = Elm.Native.Task.make(localRuntime);
+    var Signal = Elm.Native.Signal.make(localRuntime);
+    var Port = Elm.Native.Port.make(localRuntime);
+    var Tuple2 = Elm.Native.Utils.make(localRuntime).Tuple2;
 
-    var midi = null;  // global MIDIAccess object
-
+    // PRIVATE DATA
+    // global MIDIAccess object
+    var midi = null;
+    // List of valid channel MIDI messages and matching value
+    var _channelMessages = {
+        "noteoff": 0x8,           // 8
+        "noteon": 0x9,            // 9
+        "keyaftertouch": 0xA,     // 10
+        "controlchange": 0xB,     // 11
+        "channelmode": 0xB,       // 11
+        "programchange": 0xC,     // 12
+        "channelaftertouch": 0xD, // 13
+        "pitchbend": 0xE          // 14
+    };
+    // List of valid system MIDI messages and matching value (249 and 253 are actually
+    // dispatched by the Web MIDI API but I do not know what they are for and they are not
+    // part of the online MIDI 1.0 spec. (http://www.midi.org/techspecs/midimessages.php)
+    var _systemMessages = {
+        "sysex": 0xF0,            // 240
+        "timecode": 0xF1,         // 241
+        "songposition": 0xF2,     // 242
+        "songselect": 0xF3,       // 243
+        "tuningrequest": 0xF6,    // 246
+        "sysexend": 0xF7,         // 247 (never actually received - simply ends a sysex)
+        "clock": 0xF8,            // 248
+        "start": 0xFA,            // 250
+        "continue": 0xFB,         // 251
+        "stop": 0xFC,             // 252
+        "activesensing": 0xFE,    // 254
+        "reset": 0xFF,            // 255
+        "unknownsystemmessage": -1
+    };
+    // -------------------
     function requestMIDIAccess (settings) {
         return Task.asyncFunction(function(callback) {
+
+            if (! ("requestMIDIAccess" in navigator)) {
+                console.error('No Web MIDI support')
+                return callback(Task.fail(new Error('No Web MIDI support')));
+            }
 
             function onMIDISuccess (midiAccess) {
                 midi = midiAccess;
@@ -60,8 +99,6 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 	    });
         })};
 
-    var Signal = Elm.Native.Signal.make(localRuntime);
-    var Port = Elm.Native.Port.make(localRuntime);
 
     function open (id, signal) {
         return Task.asyncFunction(function(callback) {
@@ -72,7 +109,10 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         var midiOut = Port.outboundSignal("midiOut-" + signal.name,
                                                           function (v) {
                                                               return {noteOn: v.noteOn
-                                                                      ,pitch: v.pitch};
+                                                                      ,pitch: v.pitch
+                                                                      ,velocity: v.velocity
+                                                                      ,timestamp: v.timestamp
+                                                                      ,channel: v.channel};
                                                           },
                                                           signal);
 
@@ -83,9 +123,16 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                             port.send([ 0x90, 0x45, 0x7f ] );
                         });
                     } else if (port.type === "input") {
-                        port.onmidimessage = function(data) {
-                            console.log(data);
-                            var note = { ctor: "MidiNote", _0: true, _1: 43 };
+                        port.onmidimessage = function(event) {
+                            if (event.data[0] < 240) {      // device and channel-specific message
+                                // _parseChannelEvent(e);
+                                noteDecode(event);
+                            } else if (e.data[0] <= 255) {  // system message
+                                console.log("TODO: parse " + event);
+                                // _parseSystemEvent(e);
+                            }
+
+                            var note = noteDecode(event);
                             localRuntime.notify(signal.id, note)
                         }
                     }
@@ -103,9 +150,45 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
         });
     }
+
+    // Encode ELM MidiNote to MIDI Message
+    function noteEncode (mote) {
+
+    }
+
+    // Decode event
+    // Taken from https://github.com/cotejp/webmidi/blob/master/src/webmidi.js
+    function noteDecode (e) {
+        var command = e.data[0] >> 4;
+        var channel = (e.data[0] & 0xf) + 1;
+        var data1, data2;
+
+        if (e.data.length > 1) {
+            data1 = e.data[1];
+            data2 = e.data.length > 2 ? e.data[2] : undefined;
+        }
+
+        var noteoff = command === _channelMessages.noteoff ||
+            (command === _channelMessages.noteon && data2 === 0);
+
+
+        return { _ : {},
+                 noteOn: ! noteoff,
+                 pitch: Tuple2(data1 % 12, Math.floor(data1 / 12 - 1) - 3),
+                 timestamp: e.receivedTime,
+                 velocity: data2 / 127,
+                 channel: channel
+               };
+    }
+
+    var performance = Signal.input('WebMidi.performance', function () {
+        console.error("FIXME")
+        performance.now()});
+
     return localRuntime.Native.WebMidi.values = {
         requestMIDIAccess: requestMIDIAccess,
         open: F2(open),
-        close: close
+        close: close,
+        performance: performance
     };
 };
