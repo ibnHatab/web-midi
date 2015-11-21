@@ -14,6 +14,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
     var Signal = Elm.Native.Signal.make(localRuntime);
     var Port = Elm.Native.Port.make(localRuntime);
     var Tuple2 = Elm.Native.Utils.make(localRuntime).Tuple2;
+    var MidiEvent = Elm.MidiEvent.make(localRuntime);
 
     // PRIVATE DATA
     // global MIDIAccess object
@@ -60,22 +61,26 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                 midi = midiAccess;
 
                 var elmMidiAccess =  {
-                    _: {},
+                    _ : {},
                     inputs: Dict.empty,
                     outputs: Dict.empty,
                     sysexEnabled: midiAccess.sysexEnabled
                 }
 
                 midiAccess.inputs.forEach(function(port){
-                    var value = { ctor: 'MIDIPort', _0: port.name,
-                                  _1:  port.manufacturer, _2: port.version }
+                    var value = { _ : {},
+                                  name: port.name,
+                                  manufacturer:  port.manufacturer,
+                                  version: port.version };
                     elmMidiAccess.inputs =
                         A3(Dict.insert, port.id, value, elmMidiAccess.inputs);
                 });
 
                 midiAccess.outputs.forEach(function(port){
-                    var value = { ctor: 'MIDIPort', _0: port.name,
-                                  _1:  port.manufacturer, _2: port.version }
+                    var value = { _ : {},
+                                  name: port.name,
+                                  manufacturer:  port.manufacturer,
+                                  version: port.version };
                     elmMidiAccess.outputs =
                         A3(Dict.insert, port.id, value, elmMidiAccess.outputs);
                 });
@@ -108,11 +113,13 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                     if(port.type === "output") {
                         var midiOut = Port.outboundSignal("midiOut-" + signal.name,
                                                           function (v) {
-                                                              return {noteOn: v.noteOn
-                                                                      ,pitch: v.pitch
-                                                                      ,velocity: v.velocity
-                                                                      ,timestamp: v.timestamp
-                                                                      ,channel: v.channel};
+                                                              console.log(v);
+                                                              return v;
+                                                              // {noteOn: v.noteOn
+                                                              //         ,pitch: v.pitch
+                                                              //         ,velocity: v.velocity
+                                                              //         ,timestamp: v.timestamp
+                                                              //         ,channel: v.channel};
                                                           },
                                                           signal);
 
@@ -124,16 +131,13 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         });
                     } else if (port.type === "input") {
                         port.onmidimessage = function(event) {
+                            var midiEvent;
                             if (event.data[0] < 240) {      // device and channel-specific message
-                                // _parseChannelEvent(e);
-                                noteDecode(event);
+                                midiEvent = handleMidiEvent(event);
                             } else if (e.data[0] <= 255) {  // system message
-                                console.log("TODO: parse " + event);
-                                // _parseSystemEvent(e);
+                                midiEvent = handleSystemEvent(event);
                             }
-
-                            var note = noteDecode(event);
-                            localRuntime.notify(signal.id, note)
+                            localRuntime.notify(signal.id, midiEvent);
                         }
                     }
 
@@ -147,13 +151,98 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
     function close (id) {
         return Task.asyncFunction(function(callback) {
-
+            // close device
+            // unsubscribe signal
         });
     }
 
-    // Encode ELM MidiNote to MIDI Message
-    function noteEncode (mote) {
+    function handleMidiEvent(e) {
+        var command = e.data[0] >> 4;
+        var channel = (e.data[0] & 0xf) + 1;
+        var data1, data2;
 
+        if (e.data.length > 1) {
+            data1 = e.data[1];
+            data2 = e.data.length > 2 ? e.data[2] : undefined;
+        }
+
+        if (command === _channelMessages.noteoff ||
+            (command === _channelMessages.noteon && data2 === 0) ) {
+            return MidiEvent.NoteOff(channel, data1, data2 / 127);
+        }
+        else if (command === _channelMessages.noteon) {
+            return MidiEvent.NoteOn(channel, data1, data2 / 127);
+        }
+        else if (command === _channelMessages.keyaftertouch) {
+            return MidiEvent.PolyAfter(channel, data1, data2 / 127);
+        }
+        else if (command === _channelMessages.controlchange &&
+                 data1 >= 0 && data1 <= 119 ) {
+            return MidiEvent.Control(channel, data1, data2);
+        }
+        else if (command === _channelMessages.channelmode &&
+                 data1 >= 120 && data1 <= 127) {
+            return MidiEvent.Mode(channel, data1, data2);
+        }
+        else if (command === _channelMessages.programchange) {
+            return MidiEvent.ProgChange(channel, data1);
+        }
+        else if (command === _channelMessages.channelaftertouch) {
+            return MidiEvent.MonoAfter(channel, data1 / 127);
+        }
+        else if (command === _channelMessages.pitchbend) {
+            return MidiEvent.PitchBend(channel, ((data2 << 7) + data1 - 8192) / 8192);
+        }
+
+        return MidiEvent.Unknown( {'command' : command,
+                                   'channel' :channel,
+                                   'data1' : data1,
+                                   'data2' : data2} );
+    }
+
+
+    function handleSystemEvent(e) {
+        var command = e.data[0];
+
+        if ( command === _systemMessages.sysex ) {
+            return MidiEvent.Sysex();
+        }
+        else if ( command === _systemMessages.timecode ) {
+            return MidiEvent.Timecode();
+        }
+        else if ( command === _systemMessages.songposition ) {
+            return MidiEvent.Songposition();
+        }
+        else if ( command === _systemMessages.songselect ) {
+            return MidiEvent.Songselect(e.data[1]);
+        }
+        else if ( command === _systemMessages.tuningrequest ) {
+            return MidiEvent.Tuningrequest();
+        }
+        else if ( command === _systemMessages.sysexend ) {
+            return MidiEvent.Sysexend();
+        }
+        else if ( command === _systemMessages.clock ) {
+            return MidiEvent.Clock();
+        }
+        else if ( command === _systemMessages.start ) {
+            return MidiEvent.Start();
+        }
+        else if ( command === _systemMessages.continue ) {
+            return MidiEvent.Continue();
+        }
+        else if ( command === _systemMessages.stop ) {
+            return MidiEvent.Stop();
+        }
+        else if ( command === _systemMessages.activesensing ) {
+            return MidiEvent.Activesensing();
+        }
+        else if ( command === _systemMessages.reset ) {
+            return MidiEvent.Reset();
+        }
+
+        return MidiEvent.Unknown( {'command' : command,
+                                   'data' : e.data} );
     }
 
     // Decode event

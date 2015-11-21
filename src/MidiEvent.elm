@@ -19,7 +19,6 @@ type MEvent = MidiEvent ElapsedTime MidiEvent
 {-| MIDI ElapsedTime -}
 type alias ElapsedTime  = Int
 
-
 {-|-}
 type alias MPitch      = Int
 {-|-}

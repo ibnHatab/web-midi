@@ -31,6 +31,8 @@ import Native.WebMidi
 import Dict exposing (Dict, empty)
 import Task exposing (Task, andThen, succeed)
 
+import MidiEvent exposing (..)
+
 
 {-| This interface represents a MIDI input or output port.  -}
 type alias MIDIPort = {
