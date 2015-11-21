@@ -2,13 +2,13 @@ module Music where
 {-| This module provides basic musical concepts.
 
 # The Music Data Type
-@docs Pitch, PitchClass, Octave
+@docs Pitch, PitchClass, Octave, Mode
 
 # Composition
-@docs Music, Dur, IName, trans
+@docs Music, Dur, IName, trans, dur
 
 # Arifmetic
-@docs normalizeR, addR, multiplyR, toFloatR
+@docs normalizeD, addD, multiplyD, divideD, toFloatD, maxD
 @docs (:+:), (:=:), (!!), (:%:)
 
 # Representation
@@ -46,11 +46,15 @@ double its frequency
 -}
 type alias Octave = Int
 
+{-| The Key Signature specifies a mode, either major or minor. -}
+type Mode = Major | Minor
+
 {-| Durations and tempo scalings are represented using rational numbers -}
 type Dur = Dur Int Int
+
 {-| Normalize Durn post arophmetic -}
-normalizeR : Dur -> Dur
-normalizeR (Dur p q) =
+normalizeD : Dur -> Dur
+normalizeD (Dur p q) =
   let
     gcd : Int -> Int -> Int
     gcd a b = if b == 0 then a else gcd b (a % b)
@@ -58,20 +62,28 @@ normalizeR (Dur p q) =
   in Dur (p // k) (q // k)
 
 {-| Durn addition -}
-addR : Dur -> Dur -> Dur
-addR (Dur a b) (Dur c d) =
-  normalizeR (Dur (a * d + b * c) (b * d))
+addD : Dur -> Dur -> Dur
+addD (Dur a b) (Dur c d) =
+  normalizeD (Dur (a * d + b * c) (b * d))
 
 {-| Dur multiplication  -}
-multiplyR : Dur -> Dur -> Dur
-multiplyR (Dur a b) (Dur c d) =
-  normalizeR (Dur (a * c) (b * d))
+multiplyD : Dur -> Dur -> Dur
+multiplyD (Dur a b) (Dur c d) =
+  normalizeD (Dur (a * c) (b * d))
+
+{-| Dur division -}
+divideD : Dur -> Dur -> Dur
+divideD r (Dur a b) =
+  multiplyD r (Dur b a)
 
 {-| Radio to Float -}
-toFloatR : Dur -> Float
-toFloatR (Dur a b) = Basics.toFloat a / Basics.toFloat b
+toFloatD : Dur -> Float
+toFloatD (Dur a b) = Basics.toFloat a / Basics.toFloat b
 
-
+{-| Max duration -}
+maxD : Dur -> Dur -> Dur
+maxD d1 d2 =
+  if toFloatD d1 > toFloatD d2 then d1 else d2
 
 {-| Musical structures are captured in Music data type
  - m1 :+: m2 is the “sequential composition” of m1 and m2 (i.e., m1 and m2 are played in sequence).
@@ -81,12 +93,12 @@ toFloatR (Dur a b) = Basics.toFloat a / Basics.toFloat b
  - Instr iname m declares that m is to be performed using instrument iname
 -}
 type Music = Note Pitch Dur
-          | Rest Dur
-          | Sequence Music Music
-          | Parallel Music Music
-          | Tempo  (Dur Int) Music
-          | Trans  Int Music
-          | Instr  IName Music
+           | Rest Dur
+           | Sequence Music Music
+           | Parallel Music Music
+           | Tempo  Dur Music
+           | Trans  Int Music
+           | Instr  IName Music
 
 {-| the “sequential composition” -}
 (:+:) : Music -> Music -> Music
@@ -340,3 +352,15 @@ delay d m = Rest d :+: m
 {-| repeat music -}
 repeatM : Int -> Music -> Music
 repeatM n m =  List.repeat n m |> line
+
+{-| duration in beats of a musical structure -}
+dur : Music -> Dur
+dur music =
+  case music of
+    (Note _ d)    -> d
+    (Rest d)      -> d
+    (Sequence m1 m2)   -> dur m1 `addD` dur m2
+    (Parallel m1 m2)   -> dur m1 `maxD` dur m2
+    (Tempo  a  m) -> dur m `divideD` a
+    (Trans  _  m) -> dur m
+    (Instr  _  m) -> dur m
