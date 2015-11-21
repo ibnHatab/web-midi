@@ -36,6 +36,16 @@ type alias MidiChannel = Int
 {-|-}
 type alias ControlVal  = Int
 
+
+-- type EventType = NoteOff             -- noteoff
+--                | NoteOn              -- noteon
+--                | PolyAfter           -- keyaftertouch
+--                | ProgChange                 -- programchange
+--                | Control       -- controlchange
+--                | PitchBend                  -- pitchbend
+--                | MonoAfter                 -- channelaftertouch
+--                | Mode          -- channelmode
+
 {-| Midi Events
 - NoteOn ch p v turns on note (pitch) p with velocity (volume) v on MIDI channel ch.
 - NoteOff ch p v performs a similar function in turning the note off.

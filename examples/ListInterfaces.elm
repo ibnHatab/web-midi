@@ -1,8 +1,6 @@
 
 
 import WebMidi exposing (..)
-import MidiEvent exposing (..)
-
 import Html exposing (..)
 import Graphics.Element exposing (show)
 import Dict exposing (Dict, empty, get)
@@ -20,15 +18,18 @@ selectInstrument name instruments =
                             else keyList) [] instruments
   in List.head ids
 
-midiOut : Signal.Mailbox MidiEvent
+midiOut : Signal.Mailbox MidiNote
 midiOut =
   Signal.mailbox none
 
-port midiOutPort : Signal MidiEvent
+port midiOutPort : Signal MidiNote
 port midiOutPort = midiOut.signal
 
-port midiInPort : Signal MidiEvent
-port midiInPort = Signal.constant none
+
+-- port midiInPort = Signal.constant none
+-- midiInPort : Signal MidiNote
+-- midiInPort =
+--   Native.Port.outboundSignal("midiInPort", \v->v, Signal.constant none)
 
 port midiAccess : Task x ()
 port midiAccess =
@@ -36,7 +37,7 @@ port midiAccess =
            `andThen` \midi -> let id = withDefault "unknown" (selectInstrument synch midi.outputs)
                               in WebMidi.open id midiOut.signal
            `andThen` \outPort -> let id = withDefault "unknown" (selectInstrument keyboard midi.inputs)
-                                 in WebMidi.open id midiInPort
+                                 in WebMidi.open id WebMidi.inputs
            `andThen` \p -> Signal.send midiOut.address (MidiNote True (1,4) 0 0 0)
            `andThen` \out -> report midi
 
@@ -55,4 +56,4 @@ report markdown =
 --   Signal.map show readme.signal
 
 main =
-  Signal.map show midiInPort
+  Signal.map show WebMidi.inputs

@@ -130,6 +130,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                             port.send([ 0x90, 0x45, 0x7f ] );
                         });
                     } else if (port.type === "input") {
+
                         port.onmidimessage = function(event) {
                             var midiEvent;
                             if (event.data[0] < 240) {      // device and channel-specific message
@@ -137,6 +138,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                             } else if (e.data[0] <= 255) {  // system message
                                 midiEvent = handleSystemEvent(event);
                             }
+                            console.log(midiEvent);
                             localRuntime.notify(signal.id, midiEvent);
                         }
                     }
@@ -274,10 +276,19 @@ Elm.Native.WebMidi.make = function(localRuntime) {
         console.error("FIXME")
         performance.now()});
 
+    var inputs = Signal.input('WebMidi.inputs', { _ : {},
+                                                  noteOn: false,
+                                                  pitch: Tuple2(0,0),
+                                                  timestamp: 0,
+                                                  velocity: 0,
+                                                  channel: 0
+                                                });
+
     return localRuntime.Native.WebMidi.values = {
         requestMIDIAccess: requestMIDIAccess,
         open: F2(open),
         close: close,
-        performance: performance
+        performance: performance,
+        inputs: inputs
     };
 };

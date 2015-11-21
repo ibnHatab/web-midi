@@ -5,7 +5,7 @@ designed to represent the low-level software protocol of MIDI, in
 order to enable developers to build powerful MIDI software on top..
 
 # Basic access to
-@docs requestMIDIAccess, Settings, MIDIAccess, MIDIPort
+@docs requestMIDIAccess, Settings, MIDIAccess, MIDIPort, inputs
 
 
 @docs defaultSettings
@@ -102,6 +102,12 @@ close =
 performance : Signal float
 performance =
   Native.WebMidi.performance
+
+{-| input multiplexer -}
+inputs : Signal MidiNote
+inputs =
+  Native.WebMidi.inputs
+
 
 {-
 playNote : Address MidiNote -> MidiNote -> Task x ()
