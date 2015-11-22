@@ -10,6 +10,7 @@ Performance, which is an abstract notion of what the music means.
 -}
 import Music exposing (..)
 import Time exposing (Time)
+import MidiEvent exposing (..)
 
 {-| Sequence of musical events -}
 type alias Performance = List Event
@@ -83,3 +84,51 @@ merge (e1::es1 as a) (e2::es2 as b) =
     otherwise ->
       if .eTime e1 < .eTime e2 then e1 :: merge es1 b
       else e2 :: merge a es2
+
+division = 96
+
+performToMidi : Performance -> MidiFile
+performToMidi pf =
+  MidiFile (Ticks division)
+             (List.map performToMEvs (splitByInst pf))
+
+{-|
+we must associate each instrument with a separate track
+it also assigns a unique channel number to each instrument (max 16)
+-}
+splitByInst : Performance -> List (MidiChannel,ProgNum,Performance)
+splitByInst p =
+  let
+    aux n pf =
+      case pf of
+        [] -> []
+        h :: tl ->
+          let i = .eInst h
+              (pf1,pf2) = List.partition (\e -> .eInst e == i) pf
+              n'        = if n==8 then 10 else n+1
+          in if i == Percussion
+             then (9, 0, pf1) :: aux n pf2
+             else (n, instrumentToInt i, pf1) :: aux n' pf2
+  in aux 0 p
+
+{-|
+converts a Performance into a stream of MEvents (i.e., a Track).
+-}
+performToMEvs : (MidiChannel,ProgNum,Performance) -> Track
+performToMEvs (ch,pn,perf)
+  = let tempo = 500000
+        setupInst   = ChannelEvent 0 (ProgChange ch pn)
+        setTempo    = SystemEvent 0 (SetTempo tempo)
+        loop p = case p of
+                   [] -> []
+                   e::es ->
+                     let (mev1,mev2) = mkMEvents ch e
+                     in  mev1 :: insertMEvent mev2 (loop es)
+    in  setupInst :: setTempo :: loop perf
+
+mkMEvents : MidiChannel -> Event -> (MEvent,MEvent)
+mkMEvents mChan { eTime, ePitch, eDur }
+  = (ChannelEvent (toDelta eTime) (NoteOn  mChan ePitch 127),
+     ChannelEvent (toDelta (eTime+eDur)) (NoteOff mChan ePitch 127))
+
+toDelta t = round (t * 4.0 * division)

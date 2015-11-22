@@ -3,7 +3,7 @@ module MidiEvent (..) where
 
 The online MIDI 1.0 spec. http://www.midi.org/techspecs/midimessages.php
 
-@docs Track, MEvent, ElapsedTime, MidiEvent, SystemEvent
+@docs MidiFile, Division, Track, MEvent, ElapsedTime, MidiEvent, SystemEvent
 
 @docs MPitch, Velocity, ControlNum, PBRange, ProgNum, Pressure, MidiChannel, ControlVal
 
@@ -16,11 +16,16 @@ The online MIDI 1.0 spec. http://www.midi.org/techspecs/midimessages.php
 import WebMidi exposing (ChannelMessage, SystemMessage, ID, HighResTimeStamp)
 
 {-| MIDI File -}
+type MidiFile = MidiFile Division (List Track)
+
+{-|-}
+type Division = Ticks Int
+{-| Track -}
 type alias Track  = List MEvent
 
 {-| MIDI Event -}
 type MEvent = ChannelEvent ElapsedTime MidiEvent
-            | SystemEvent SystemEvent
+            | SystemEvent ElapsedTime SystemEvent
             | NoEvent
 
 {-| MIDI ElapsedTime -}
