@@ -5,7 +5,7 @@ designed to represent the low-level software protocol of MIDI, in
 order to enable developers to build powerful MIDI software on top..
 
 # Basic access to
-@docs requestMIDIAccess, Settings, MIDIAccess, MIDIPort, inputs
+@docs requestMIDIAccess, Settings, MIDIAccess, MIDIPort
 
 
 @docs defaultSettings
@@ -17,12 +17,12 @@ order to enable developers to build powerful MIDI software on top..
 # Sends a MIDI message to the specified device(s) at the specified
   timestamp.
 
-@docs MidiNote, none
+@docs ChannelMessage, none, SystemMessage, HighResTimeStamp
 
 
 # Utils to synchronously perform music
 
-@docs performance
+@docs performance, channel, system
 
 
 -}
@@ -30,8 +30,6 @@ order to enable developers to build powerful MIDI software on top..
 import Native.WebMidi
 import Dict exposing (Dict, empty)
 import Task exposing (Task, andThen, succeed)
-
-import MidiEvent exposing (..)
 
 
 {-| This interface represents a MIDI input or output port.  -}
@@ -52,19 +50,28 @@ type alias MIDIAccess = {
   , sysexEnabled : Bool
   }
 
-{-| MIDI event -}
-type alias MidiNote =
-  { noteOn    : Bool
-  , pitch     : (Int, Int)
-  , velocity  : Int
-  , timestamp : Int
+{-| milliseconds accurate to 5 microseconds -}
+type alias HighResTimeStamp = Float
+
+{-| ChannelMessage objects implementing MIDIInput interface -}
+type alias ChannelMessage =
+  { command   : Int
+  , data1     : Int
+  , data2     : Int
   , channel   : Int
+  , timestamp : HighResTimeStamp
   }
 
-{-| Not a Note
--}
-none : MidiNote
-none = MidiNote False (0,0) 0 0 0
+{-| Not a message -}
+none : ChannelMessage
+none = ChannelMessage 0 0 0 0 0
+
+{-| -}
+type alias SystemMessage =
+  { event  : Int
+  , device : ID
+  , data   : Int
+  }
 
 {-| Settings used by access to MIDI devices and informing on
 configuration changes. -}
@@ -89,7 +96,7 @@ requestMIDIAccess =
   Native.WebMidi.requestMIDIAccess
 
 {-| Open MIDI Devices -}
-open : ID -> Signal MidiNote -> Task x MIDIPort
+open : ID -> Signal ChannelMessage -> Task x MIDIPort
 open =
   Native.WebMidi.open
 
@@ -103,14 +110,19 @@ performance : Signal float
 performance =
   Native.WebMidi.performance
 
-{-| input multiplexer -}
-inputs : Signal MidiNote
-inputs =
-  Native.WebMidi.inputs
+{-| channel input multiplexer -}
+channel : Signal ChannelMessage
+channel =
+  Native.WebMidi.channel
 
+{-| system input multiplexer -}
+system : Signal ChannelMessage
+system =
+  Native.WebMidi.system
 
 {-
-playNote : Address MidiNote -> MidiNote -> Task x ()
+playNote : Address ChannelMessage -> ChannelMessage
+ -> Task x ()
 playNote addr note =
   Signal.send addr note
 

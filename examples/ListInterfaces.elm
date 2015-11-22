@@ -1,6 +1,6 @@
 
 
-import WebMidi exposing (..)
+
 import Html exposing (..)
 import Graphics.Element exposing (show)
 import Dict exposing (Dict, empty, get)
@@ -8,37 +8,35 @@ import Task exposing (Task, andThen, succeed)
 import Maybe exposing (withDefault)
 import Debug
 
+import WebMidi exposing (..)
+import MidiEvent exposing (..)
+import Music exposing (..)
+
 synch = "Synth input port (16600:0)"
 keyboard = "Virtual Keyboard"
 
-selectInstrument : String -> Dict ID MIDIPort -> Maybe ID
+selectInstrument : String -> Dict ID MIDIPort -> ID
 selectInstrument name instruments =
   let ids = Dict.foldr (\key val keyList ->
-                            if val.name == name then key :: keyList
-                            else keyList) [] instruments
-  in List.head ids
+                        if val.name == name then key :: keyList
+                        else keyList) [] instruments
+  in List.head ids |> withDefault "unknown"
 
-midiOut : Signal.Mailbox MidiNote
+midiOut : Signal.Mailbox ChannelMessage
 midiOut =
   Signal.mailbox none
 
-port midiOutPort : Signal MidiNote
+port midiOutPort : Signal ChannelMessage
 port midiOutPort = midiOut.signal
 
-
--- port midiInPort = Signal.constant none
--- midiInPort : Signal MidiNote
--- midiInPort =
---   Native.Port.outboundSignal("midiInPort", \v->v, Signal.constant none)
+c4on = NoteOn 1 (absPitch (C, 4)) 50
 
 port midiAccess : Task x ()
 port midiAccess =
   WebMidi.requestMIDIAccess defaultSettings
-           `andThen` \midi -> let id = withDefault "unknown" (selectInstrument synch midi.outputs)
-                              in WebMidi.open id midiOut.signal
-           `andThen` \outPort -> let id = withDefault "unknown" (selectInstrument keyboard midi.inputs)
-                                 in WebMidi.open id WebMidi.inputs
-           `andThen` \p -> Signal.send midiOut.address (MidiNote True (1,4) 0 0 0)
+           `andThen` \midi -> WebMidi.open (selectInstrument synch midi.outputs) midiOut.signal
+           `andThen` \outPort -> WebMidi.open (selectInstrument keyboard midi.inputs) WebMidi.channel
+           `andThen` \p -> Signal.send midiOut.address (encodeChannelEvent c4on 0)
            `andThen` \out -> report midi
 
 
@@ -56,4 +54,4 @@ report markdown =
 --   Signal.map show readme.signal
 
 main =
-  Signal.map show WebMidi.inputs
+  Signal.map show (Signal.map2 (,) WebMidi.channel WebMidi.system)

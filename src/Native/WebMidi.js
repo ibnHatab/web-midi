@@ -14,41 +14,10 @@ Elm.Native.WebMidi.make = function(localRuntime) {
     var Signal = Elm.Native.Signal.make(localRuntime);
     var Port = Elm.Native.Port.make(localRuntime);
     var Tuple2 = Elm.Native.Utils.make(localRuntime).Tuple2;
-    var MidiEvent = Elm.MidiEvent.make(localRuntime);
 
-    // PRIVATE DATA
     // global MIDIAccess object
     var midi = null;
-    // List of valid channel MIDI messages and matching value
-    var _channelMessages = {
-        "noteoff": 0x8,           // 8
-        "noteon": 0x9,            // 9
-        "keyaftertouch": 0xA,     // 10
-        "controlchange": 0xB,     // 11
-        "channelmode": 0xB,       // 11
-        "programchange": 0xC,     // 12
-        "channelaftertouch": 0xD, // 13
-        "pitchbend": 0xE          // 14
-    };
-    // List of valid system MIDI messages and matching value (249 and 253 are actually
-    // dispatched by the Web MIDI API but I do not know what they are for and they are not
-    // part of the online MIDI 1.0 spec. (http://www.midi.org/techspecs/midimessages.php)
-    var _systemMessages = {
-        "sysex": 0xF0,            // 240
-        "timecode": 0xF1,         // 241
-        "songposition": 0xF2,     // 242
-        "songselect": 0xF3,       // 243
-        "tuningrequest": 0xF6,    // 246
-        "sysexend": 0xF7,         // 247 (never actually received - simply ends a sysex)
-        "clock": 0xF8,            // 248
-        "start": 0xFA,            // 250
-        "continue": 0xFB,         // 251
-        "stop": 0xFC,             // 252
-        "activesensing": 0xFE,    // 254
-        "reset": 0xFF,            // 255
-        "unknownsystemmessage": -1
-    };
-    // -------------------
+
     function requestMIDIAccess (settings) {
         return Task.asyncFunction(function(callback) {
 
@@ -108,38 +77,54 @@ Elm.Native.WebMidi.make = function(localRuntime) {
     function open (id, signal) {
         return Task.asyncFunction(function(callback) {
             var dev = midi.inputs.get(id) || midi.outputs.get(id);
+
+            if (! dev) {
+                return callback(Task.fail(new Error("No such device found")));
+            }
+
             dev.open().then(
                 function(port) {
                     if(port.type === "output") {
+                        // FIXME: cascading ports on raise with runtime?
                         var midiOut = Port.outboundSignal("midiOut-" + signal.name,
-                                                          function (v) {
-                                                              console.log(v);
-                                                              return v;
-                                                              // {noteOn: v.noteOn
-                                                              //         ,pitch: v.pitch
-                                                              //         ,velocity: v.velocity
-                                                              //         ,timestamp: v.timestamp
-                                                              //         ,channel: v.channel};
-                                                          },
+                                                          function (v) { return v; },
                                                           signal);
 
                         var midiOutSignal = localRuntime.ports["midiOut-" + signal.name];
 
-                        midiOutSignal.subscribe(function(note) {
-                            console.log(note);
-                            port.send([ 0x90, 0x45, 0x7f ] );
+                        midiOutSignal.subscribe(function(e) {
+                            if ("command" in e) {
+                                var status = (e.command << 4) + (e.channel - 1)
+                                var message = [status, e.data1];
+
+                                if (e.data2 > 0) { message.push(e.data2); }
+                                port.send(message, e.timestamp);
+                            } if ("event" in e) {
+                                var message = [e.event];
+                                if (e.data > 0) { message.push(e.data); }
+
+                                var dev = midi.outputs.get(e.device);
+                                dev.send(message);
+                            }
                         });
                     } else if (port.type === "input") {
 
+                        if (! signal.id == channelIn.id) {
+                            throw new Error(
+                                "Signal Error:\n" +
+                                    "Can not associate " + signal.name + " with MIDI input.\n" +
+                                    "Use WebMidi.channel to open input device."
+                            );
+                        }
+
                         port.onmidimessage = function(event) {
-                            var midiEvent;
                             if (event.data[0] < 240) {      // device and channel-specific message
-                                midiEvent = handleMidiEvent(event);
+                                var elmEvent = handleChannelEvent(event);
+                                localRuntime.notify(channelIn.id, elmEvent);
                             } else if (e.data[0] <= 255) {  // system message
-                                midiEvent = handleSystemEvent(event);
+                                var elmEvent = handleSystemEvent(event);
+                                localRuntime.notify(systemIn.id, elmEvent);
                             }
-                            console.log(midiEvent);
-                            localRuntime.notify(signal.id, midiEvent);
                         }
                     }
 
@@ -153,142 +138,80 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
     function close (id) {
         return Task.asyncFunction(function(callback) {
-            // close device
-            // unsubscribe signal
+            var dev = midi.inputs.get(id) || midi.outputs.get(id);
+
+            if (! dev) {
+                return callback(Task.fail(new Error("No such device found")));
+            }
+
+            dev.close().then(
+                function(port) {
+                    if(port.type === "input") {
+                        port.onmidimessage = null;
+                    }
+                    return callback(Task.succeed(port))
+                },
+                function(error) {
+                    return callback(Task.fail(error))
+                });
         });
     }
 
-    function handleMidiEvent(e) {
-        var command = e.data[0] >> 4;
-        var channel = (e.data[0] & 0xf) + 1;
-        var data1, data2;
+    // EVENT HANDLERS
 
-        if (e.data.length > 1) {
-            data1 = e.data[1];
-            data2 = e.data.length > 2 ? e.data[2] : undefined;
-        }
-
-        if (command === _channelMessages.noteoff ||
-            (command === _channelMessages.noteon && data2 === 0) ) {
-            return MidiEvent.NoteOff(channel, data1, data2 / 127);
-        }
-        else if (command === _channelMessages.noteon) {
-            return MidiEvent.NoteOn(channel, data1, data2 / 127);
-        }
-        else if (command === _channelMessages.keyaftertouch) {
-            return MidiEvent.PolyAfter(channel, data1, data2 / 127);
-        }
-        else if (command === _channelMessages.controlchange &&
-                 data1 >= 0 && data1 <= 119 ) {
-            return MidiEvent.Control(channel, data1, data2);
-        }
-        else if (command === _channelMessages.channelmode &&
-                 data1 >= 120 && data1 <= 127) {
-            return MidiEvent.Mode(channel, data1, data2);
-        }
-        else if (command === _channelMessages.programchange) {
-            return MidiEvent.ProgChange(channel, data1);
-        }
-        else if (command === _channelMessages.channelaftertouch) {
-            return MidiEvent.MonoAfter(channel, data1 / 127);
-        }
-        else if (command === _channelMessages.pitchbend) {
-            return MidiEvent.PitchBend(channel, ((data2 << 7) + data1 - 8192) / 8192);
-        }
-
-        return MidiEvent.Unknown( {'command' : command,
-                                   'channel' :channel,
-                                   'data1' : data1,
-                                   'data2' : data2} );
-    }
-
-
-    function handleSystemEvent(e) {
-        var command = e.data[0];
-
-        if ( command === _systemMessages.sysex ) {
-            return MidiEvent.Sysex();
-        }
-        else if ( command === _systemMessages.timecode ) {
-            return MidiEvent.Timecode();
-        }
-        else if ( command === _systemMessages.songposition ) {
-            return MidiEvent.Songposition();
-        }
-        else if ( command === _systemMessages.songselect ) {
-            return MidiEvent.Songselect(e.data[1]);
-        }
-        else if ( command === _systemMessages.tuningrequest ) {
-            return MidiEvent.Tuningrequest();
-        }
-        else if ( command === _systemMessages.sysexend ) {
-            return MidiEvent.Sysexend();
-        }
-        else if ( command === _systemMessages.clock ) {
-            return MidiEvent.Clock();
-        }
-        else if ( command === _systemMessages.start ) {
-            return MidiEvent.Start();
-        }
-        else if ( command === _systemMessages.continue ) {
-            return MidiEvent.Continue();
-        }
-        else if ( command === _systemMessages.stop ) {
-            return MidiEvent.Stop();
-        }
-        else if ( command === _systemMessages.activesensing ) {
-            return MidiEvent.Activesensing();
-        }
-        else if ( command === _systemMessages.reset ) {
-            return MidiEvent.Reset();
-        }
-
-        return MidiEvent.Unknown( {'command' : command,
-                                   'data' : e.data} );
-    }
-
-    // Decode event
-    // Taken from https://github.com/cotejp/webmidi/blob/master/src/webmidi.js
-    function noteDecode (e) {
-        var command = e.data[0] >> 4;
-        var channel = (e.data[0] & 0xf) + 1;
-        var data1, data2;
-
-        if (e.data.length > 1) {
-            data1 = e.data[1];
-            data2 = e.data.length > 2 ? e.data[2] : undefined;
-        }
-
-        var noteoff = command === _channelMessages.noteoff ||
-            (command === _channelMessages.noteon && data2 === 0);
-
-
-        return { _ : {},
-                 noteOn: ! noteoff,
-                 pitch: Tuple2(data1 % 12, Math.floor(data1 / 12 - 1) - 3),
-                 timestamp: e.receivedTime,
-                 velocity: data2 / 127,
-                 channel: channel
+    function makeChannelMessage(a, b, c, d, e) {
+        return {_: {}
+                ,command: a
+                ,data1: b
+                ,data2: c
+                ,channel: d
+                ,timestamp: d
                };
     }
+
+    function makeSystemMessage(a, b, c) {
+        return {_: {}
+                , data: c
+                ,device: b
+                ,event: a};
+    }
+
+    function handleChannelEvent(e) {
+        var command = e.data[0] >> 4;
+        var channel = (e.data[0] & 0xf) + 1;
+        var data1 = 0, data2 = 0;
+
+        if (e.data.length > 1) {
+            data1 = e.data[1];
+            data2 = e.data.length > 2 ? e.data[2] : -1;
+        }
+
+        return makeChannelMessage(command, data1, data2, channel, e.receivedTime);
+    }
+
+    function handleSystemEvent(e) {
+        var eventId = e.data[0];
+        var data = e.data[1]
+
+        return makeSystemMessage(eventId, data, e.target.id);
+    }
+
+    // SIGNALS
 
     var performance = Signal.input('WebMidi.performance', function () {
         console.error("FIXME")
         performance.now()});
 
-    var inputs = Signal.input('WebMidi.inputs', { _ : {},
-                                                  noteOn: false,
-                                                  pitch: Tuple2(0,0),
-                                                  timestamp: 0,
-                                                  velocity: 0,
-                                                  channel: 0
-                                                });
+    var channelIn = Signal.input('WebMidi.channel', makeChannelMessage(0,0,0,0,0));
+
+    var systemIn = Signal.input('WebMidi.system', makeSystemMessage(0,0,0));
 
     return localRuntime.Native.WebMidi.values = {
         requestMIDIAccess: requestMIDIAccess,
         open: F2(open),
         close: close,
         performance: performance,
-        inputs: inputs
+        channel: channelIn,
+        system: systemIn
     };
 };
