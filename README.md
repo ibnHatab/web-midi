@@ -40,7 +40,7 @@ Demonstrate how to request access to MIDI system.
 - Open Synch input port and associate it to output port via mailbox
 - Send Event with encoded note to the mailbox
 
-```
+```elm
   synch = "Synth input port (16600:0)"
 
   WebMidi.requestMIDIAccess defaultSettings
@@ -54,12 +54,16 @@ Demonstrate how to request access to MIDI system.
   is multiplexed input port for all instruments.
 - Listen on all input events: channel and system. Those from system comming on predefined `WebMidi.system` port.
 
-```
+```elm
   keyboard = "Virtual Keyboard"
 
   WebMidi.requestMIDIAccess defaultSettings
            `andThen` \midi ->
              WebMidi.open (withDefault "none" (selectInstrument keyboard midi.inputs)) WebMidi.channel
 
+
+  main =
+    Signal.map show (Signal.map2 (,) WebMidi.channel WebMidi.system)
+
 ```
-4. Performe music
+4. Perform music

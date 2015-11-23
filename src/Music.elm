@@ -360,8 +360,11 @@ delay : Dur -> Music -> Music
 delay d m = Rest d :+: m
 
 {-| repeat music -}
+-- repeatM : Int -> Music -> Music
+-- repeatM n m =  List.repeat n m |> line
 repeatM : Int -> Music -> Music
-repeatM n m =  List.repeat n m |> line
+repeatM n m = if n > 0 then m :+: repeatM (n-1) m
+              else m
 
 {-| duration in beats of a musical structure -}
 dur : Music -> Dur
@@ -374,6 +377,7 @@ dur music =
     (Tempo  a  m)    -> dur m `divideD` a
     (Trans  _  m)    -> dur m
     (Instr  _  m)    -> dur m
+
 
 {-| Instrument to Integer -}
 instrumentToInt : IName -> Int
