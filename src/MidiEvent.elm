@@ -3,7 +3,7 @@ module MidiEvent (..) where
 
 The online MIDI 1.0 spec. http://www.midi.org/techspecs/midimessages.php
 
-@docs MidiFile, Division, Track, MEvent, ElapsedTime, MidiEvent, SystemEvent
+@docs MidiFile, Division, Track, MEvent, ElapsedTime, ChannelEvent, SystemEvent
 
 @docs MPitch, Velocity, ControlNum, PBRange, ProgNum, Pressure, MidiChannel, ControlVal
 
@@ -11,25 +11,83 @@ The online MIDI 1.0 spec. http://www.midi.org/techspecs/midimessages.php
 
 @docs channelMessages, decodeChannelEvent, encodeChannelEvent
 
+# Meta and controll
+@docs MetaEvent, MTempo,SMPTEHours,SMPTEMins,SMPTESecs,SMPTEFrames,SMPTEBits
+
 -}
 
 import WebMidi exposing (ChannelMessage, SystemMessage, ID, HighResTimeStamp)
+import Music exposing (KeyName, Mode)
 
 {-| MIDI File -}
 type MidiFile = MidiFile Division (List Track)
 
 {-|-}
-type Division = Ticks Int
+type Division = Ticks HighResTimeStamp
+
 {-| Track -}
 type alias Track  = List MEvent
 
-{-| MIDI Event -}
-type MEvent = ChannelEvent ElapsedTime MidiEvent
+
+{-| MIDI Event with timestamp -}
+type MEvent = ChannelEvent ElapsedTime ChannelEvent
             | SystemEvent ElapsedTime SystemEvent
-            | NoEvent
+            | MetaEvent ElapsedTime MetaEvent
 
 {-| MIDI ElapsedTime -}
 type alias ElapsedTime  = HighResTimeStamp
+
+
+{-| Midi Events
+- NoteOn ch p v turns on note (pitch) p with velocity (volume) v on MIDI channel ch.
+- NoteOff ch p v performs a similar function in turning the note off.
+- The volume is an integer in the range 0 to 127.
+- ProgChange ch pr sets the program number for channel ch to pr.
+  This is how an instrument is selected.
+-}
+type ChannelEvent = NoteOff    MidiChannel MPitch Velocity       -- noteoff
+                  | NoteOn     MidiChannel MPitch Velocity       -- noteon
+                  | PolyAfter  MidiChannel MPitch Pressure       -- keyaftertouch
+                  | ProgChange MidiChannel ProgNum               -- programchange
+                  | Control    MidiChannel ControlNum ControlVal -- controlchange
+                  | PitchBend  MidiChannel PBRange               -- pitchbend
+                  | MonoAfter  MidiChannel Pressure              -- channelaftertouch
+                  | Mode       MidiChannel ControlNum ControlVal -- channelmode
+
+{-| System Events
+ Event emitted when a system MIDI message has been received.
+-}
+type SystemEvent = Sysex ID                    -- sysex
+                 | Timecode ID                 -- timecode
+                 | Songposition ID Int         -- songposition
+                 | Songselect ID Int           -- songselect
+                 | Tuningrequest ID            -- tuningrequest
+                 | Sysexend ID                 -- sysexend
+                 | Clock ID                    -- clock
+                 | Start ID                    -- start
+                 | Continue ID                 -- continue
+                 | Stop ID                     -- stop
+                 | Activesensing ID            -- activesensing
+                 | Reset ID                    -- reset
+                 | Unknown String
+
+{-|
+Meta Events
+-}
+type MetaEvent = SequenceNum Int
+               | TextEvent String
+               | Copyright String
+               | TrackName String
+               | InstrName String
+               | Lyric String
+               | Marker String
+               | CuePoint String
+               | EndOfTrack
+               | SetTempo MTempo
+               | SMPTEOffset SMPTEHours SMPTEMins SMPTESecs SMPTEFrames SMPTEBits
+               | TimeSig Int Int Int Int
+               | KeySig KeyName Mode
+               | SequencerSpecific List Int
 
 {-|-}
 type alias MPitch      = Int
@@ -47,22 +105,20 @@ type alias Pressure    = Int
 type alias MidiChannel = Int
 {-|-}
 type alias ControlVal  = Int
+{-|-}
+type alias MTempo      = Int
+{-|-}
+type alias SMPTEHours  = Int
+{-|-}
+type alias SMPTEMins   = Int
+{-|-}
+type alias SMPTESecs   = Int
+{-|-}
+type alias SMPTEFrames = Int
+{-|-}
+type alias SMPTEBits   = Int
 
-{-| Midi Events
-- NoteOn ch p v turns on note (pitch) p with velocity (volume) v on MIDI channel ch.
-- NoteOff ch p v performs a similar function in turning the note off.
-- The volume is an integer in the range 0 to 127.
-- ProgChange ch pr sets the program number for channel ch to pr.
-  This is how an instrument is selected.
--}
-type MidiEvent = NoteOff    MidiChannel MPitch Velocity       -- noteoff
-               | NoteOn     MidiChannel MPitch Velocity       -- noteon
-               | PolyAfter  MidiChannel MPitch Pressure       -- keyaftertouch
-               | ProgChange MidiChannel ProgNum               -- programchange
-               | Control    MidiChannel ControlNum ControlVal -- controlchange
-               | PitchBend  MidiChannel PBRange               -- pitchbend
-               | MonoAfter  MidiChannel Pressure              -- channelaftertouch
-               | Mode       MidiChannel ControlNum ControlVal -- channelmode
+
 
 
 {-| Channel Messages commands -}
@@ -90,7 +146,7 @@ channelMessages = { noteoff = 8            -- 0x8
 -}
 decodeChannelEvent : ChannelMessage -> MEvent
 decodeChannelEvent { command, data1, data2, timestamp, channel } =
-  let midiEvent =
+  let channelEvent =
         if | command == channelMessages.noteoff || (command == channelMessages.noteon && data2 == 0)
              -> NoteOff channel data1 (data2 // 127)
            | command == channelMessages.noteon
@@ -107,10 +163,10 @@ decodeChannelEvent { command, data1, data2, timestamp, channel } =
              -> MonoAfter channel (data1 // 127)
            | command == channelMessages.pitchbend
              -> PitchBend channel (((data2 * 128) + data1 - 8192) // 8192)
-  in ChannelEvent timestamp midiEvent
+  in ChannelEvent timestamp channelEvent
 
 {-| Encode MIDI Event into Channel event -}
-encodeChannelEvent : MidiEvent -> ElapsedTime -> ChannelMessage
+encodeChannelEvent : ChannelEvent -> ElapsedTime -> ChannelMessage
 encodeChannelEvent event timestamp =
   let
     msgAt =
@@ -132,24 +188,6 @@ encodeChannelEvent event timestamp =
         Mode ch num val ->
           ChannelMessage channelMessages.channelmode num val ch
   in msgAt timestamp
-
-
-{-| System Events
-Event emitted when a system MIDI message has been received.
--}
-type SystemEvent = Sysex ID                    -- sysex
-                 | Timecode ID                 -- timecode
-                 | Songposition ID Int         -- songposition
-                 | Songselect ID Int           -- songselect
-                 | Tuningrequest ID            -- tuningrequest
-                 | Sysexend ID                 -- sysexend
-                 | Clock ID                    -- clock
-                 | Start ID                    -- start
-                 | Continue ID                 -- continue
-                 | Stop ID                     -- stop
-                 | Activesensing ID            -- activesensing
-                 | Reset ID                    -- reset
-                 | Unknown String
 
 {-| System Messages event id -}
 systemMessages : { activesensing : Int

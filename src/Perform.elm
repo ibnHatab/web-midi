@@ -5,7 +5,7 @@ Performance, which is an abstract notion of what the music means.
 
 @docs Performance, Event, DurT, Context, Key
 
-@docs metro, performM, merge, perf
+@docs metro, performM, merge, perf, toDelta, splitByInst, performToMidi, performToMEvs, mkMEvents,insertMEvent, division, toDelta
 
 -}
 import Music exposing (..)
@@ -85,8 +85,20 @@ merge (e1::es1 as a) (e2::es2 as b) =
       if .eTime e1 < .eTime e2 then e1 :: merge es1 b
       else e2 :: merge a es2
 
+{-|
+there are 96 time-code divisions per quarter note
+-}
+division : Float
 division = 96
 
+{-| there are four times that many in a whole note; multiplying that
+by the time-stamp on one of our Events gives us the proper delta-time
+-}
+toDelta : Float -> Float
+toDelta t = (t * 4.0 * division)
+
+
+{-| converts a Performance into the MidiFile data type -}
 performToMidi : Performance -> MidiFile
 performToMidi pf =
   MidiFile (Ticks division)
@@ -118,7 +130,7 @@ performToMEvs : (MidiChannel,ProgNum,Performance) -> Track
 performToMEvs (ch,pn,perf)
   = let tempo = 500000
         setupInst   = ChannelEvent 0 (ProgChange ch pn)
-        setTempo    = SystemEvent 0 (SetTempo tempo)
+        setTempo    = MetaEvent 0 (SetTempo tempo)
         loop p = case p of
                    [] -> []
                    e::es ->
@@ -126,9 +138,18 @@ performToMEvs (ch,pn,perf)
                      in  mev1 :: insertMEvent mev2 (loop es)
     in  setupInst :: setTempo :: loop perf
 
+{-| Meke Note delimeters -}
 mkMEvents : MidiChannel -> Event -> (MEvent,MEvent)
 mkMEvents mChan { eTime, ePitch, eDur }
   = (ChannelEvent (toDelta eTime) (NoteOn  mChan ePitch 127),
      ChannelEvent (toDelta (eTime+eDur)) (NoteOff mChan ePitch 127))
 
-toDelta t = round (t * 4.0 * division)
+{-| Insert event with respect of timestamp -}
+insertMEvent : MEvent -> List MEvent -> List MEvent
+insertMEvent (ChannelEvent t1 _ as ev)  evs =
+  case evs of
+    [] ->
+      [ev]
+    (ChannelEvent t2 _ as ev2) :: evs' ->
+                               if t1 <= t2 then ev :: evs
+                               else ev2 :: insertMEvent ev evs'

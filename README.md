@@ -12,3 +12,14 @@ $ vkeybd
 $ zynaddsubfx
 $ qsynth
 .. or both
+
+
+# Examples
+
+## List MIDI ports
+
+## Play a note
+
+## Listent to input events from the instrumenr
+
+## Performe music

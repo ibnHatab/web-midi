@@ -2,7 +2,7 @@ module Music where
 {-| This module provides basic musical concepts.
 
 # The Music Data Type
-@docs Pitch, PitchClass, Octave, Mode
+@docs Pitch, PitchClass, Octave, Mode, KeyName
 
 # Composition
 @docs Music, Dur, IName, trans, dur, instrumentToInt
@@ -28,6 +28,7 @@ module Music where
 # Higher-Level Constructions
 @docs line, chord, delay, repeatM
 
+
 -}
 
 import Array exposing (Array, get)
@@ -46,11 +47,83 @@ double its frequency
 -}
 type alias Octave = Int
 
+{-| The following enumerated type lists all the keys in order of their
+key signatures from flats to sharps.  (Cf = 7 flats, Gf = 6 flats
+... F = 1 flat, C = 0 flats/sharps, G = 1 sharp, ... Cs = 7 sharps.)
+Useful for transposition.
+-}
+type KeyName = KeyCf | KeyGf | KeyDf | KeyAf | KeyEf | KeyBf | KeyF
+             | KeyC | KeyG | KeyD | KeyA | KeyE | KeyB | KeyFs | KeyCs
+
 {-| The Key Signature specifies a mode, either major or minor. -}
 type Mode = Major | Minor
 
 {-| Durations and tempo scalings are represented using rational numbers -}
 type Dur = Dur Int Int
+
+{-| Musical structures are captured in Music data type
+ - m1 :+: m2 is the “sequential composition” of m1 and m2 (i.e., m1 and m2 are played in sequence).
+ - m1 :=: m2 is the “parallel composition” of m1 and m2 (i.e., m1 and m2 are played simultaneously).
+ - Tempo a m scales the rate at which m is played (i.e., its tempo) by a factor of a.
+ - Trans i m transposes m by interval i (in semitones).
+ - Instr iname m declares that m is to be performed using instrument iname
+-}
+type Music = Note Pitch Dur
+           | Rest Dur
+           | Sequence Music Music
+           | Parallel Music Music
+           | Tempo  Dur Music
+           | Trans  Int Music
+           | Instr  IName Music
+
+{-| the “sequential composition” -}
+(:+:) : Music -> Music -> Music
+(:+:) = Sequence
+
+{-| the “parallel composition” -}
+(:=:) : Music -> Music -> Music
+(:=:) = Parallel
+
+{-| General MIDI Standard instruments -}
+type IName
+  = AcousticGrandPiano    | BrightAcousticPiano | ElectricGrandPiano
+  | HonkyTonkPiano        | RhodesPiano         | ChorusedPiano
+  | Harpsichord     | Clavinet        | Celesta | Glockenspiel  | MusicBox
+  | Vibraphone | Marimba  | Xylophone           | TubularBells
+  | Dulcimer              | HammondOrgan        | PercussiveOrgan
+  | RockOrgan             | ChurchOrgan         | ReedOrgan
+  | Accordion             | Harmonica           | TangoAccordion
+  | AcousticGuitarNylon   | AcousticGuitarSteel | ElectricGuitarJazz
+  | ElectricGuitarClean   | ElectricGuitarMuted | OverdrivenGuitar
+  | DistortionGuitar      | GuitarHarmonics     | AcousticBass
+  | ElectricBassFingered  | ElectricBassPicked  | FretlessBass
+  | SlapBass1             | SlapBass2           | SynthBass1 | SynthBass2
+  | Violin        | Viola | Cello  | Contrabass | TremoloStrings
+  | PizzicatoStrings      | OrchestralHarp      | Timpani
+  | StringEnsemble1       | StringEnsemble2     | SynthStrings1
+  | SynthStrings2         | ChoirAahs           | VoiceOohs | SynthVoice
+  | OrchestraHit          | Trumpet             | Trombone  | Tuba
+  | MutedTrumpet          | FrenchHorn          | BrassSection | SynthBrass1
+  | SynthBrass2           | SopranoSax          | AltoSax | TenorSax
+  | BaritoneSax    | Oboe | Bassoon  | EnglishHorn          | Clarinet
+  | Piccolo               | Flute    | Recorder | PanFlute  | BlownBottle
+  | Shakuhachi            | Whistle  | Ocarina  | Lead1Square
+  | Lead2Sawtooth         | Lead3Calliope       | Lead4Chiff
+  | Lead5Charang          | Lead6Voice          | Lead7Fifths
+  | Lead8BassLead         | Pad1NewAge          | Pad2Warm
+  | Pad3Polysynth         | Pad4Choir           | Pad5Bowed
+  | Pad6Metallic          | Pad7Halo            | Pad8Sweep
+  | FX1Train              | FX2Soundtrack       | FX3Crystal
+  | FX4Atmosphere         | FX5Brightness       | FX6Goblins
+  | FX7Echoes             | FX8SciFi            | Sitar | Banjo  | Shamisen
+  | Koto | Kalimba        | Bagpipe             | Fiddle | Shanai
+  | TinkleBell    | Agogo | SteelDrums          | Woodblock      | TaikoDrum
+  | MelodicDrum           | SynthDrum           | ReverseCymbal
+  | GuitarFretNoise       | BreathNoise         | Seashore
+  | BirdTweet             | TelephoneRing       | Helicopter
+  | Applause              | Gunshot             | Percussion
+
+
 
 {-| Normalize Durn post arophmetic -}
 normalizeD : Dur -> Dur
@@ -84,203 +157,6 @@ toFloatD (Dur a b) = Basics.toFloat a / Basics.toFloat b
 maxD : Dur -> Dur -> Dur
 maxD d1 d2 =
   if toFloatD d1 > toFloatD d2 then d1 else d2
-
-{-| Musical structures are captured in Music data type
- - m1 :+: m2 is the “sequential composition” of m1 and m2 (i.e., m1 and m2 are played in sequence).
- - m1 :=: m2 is the “parallel composition” of m1 and m2 (i.e., m1 and m2 are played simultaneously).
- - Tempo a m scales the rate at which m is played (i.e., its tempo) by a factor of a.
- - Trans i m transposes m by interval i (in semitones).
- - Instr iname m declares that m is to be performed using instrument iname
--}
-type Music = Note Pitch Dur
-           | Rest Dur
-           | Sequence Music Music
-           | Parallel Music Music
-           | Tempo  Dur Music
-           | Trans  Int Music
-           | Instr  IName Music
-
-{-| the “sequential composition” -}
-(:+:) : Music -> Music -> Music
-(:+:) = Sequence
-
-{-| the “parallel composition” -}
-(:=:) : Music -> Music -> Music
-(:=:) = Parallel
-
-
-{-| General MIDI Standard instruments -}
-type IName
-  = AcousticGrandPiano  | BrightAcousticPiano | ElectricGrandPiano
-  | HonkyTonkPiano      | RhodesPiano         | ChorusedPiano
-  | Harpsichord   | Clavinet        | Celesta | Glockenspiel  | MusicBox
-  | Vibraphone | Marimba  | Xylophone           | TubularBells
-  | Dulcimer              | HammondOrgan        | PercussiveOrgan
-  | RockOrgan | ChurchOrgan         | ReedOrgan
-  | Accordion             | Harmonica           | TangoAccordion
-  | AcousticGuitarNylon   | AcousticGuitarSteel | ElectricGuitarJazz
-  | ElectricGuitarClean   | ElectricGuitarMuted | OverdrivenGuitar
-  | DistortionGuitar      | GuitarHarmonics     | AcousticBass
-  | ElectricBassFingered  | ElectricBassPicked  | FretlessBass
-  | SlapBass1             | SlapBass2           | SynthBass1 | SynthBass2
-  | Violin        | Viola | Cello  | Contrabass | TremoloStrings
-  | PizzicatoStrings      | OrchestralHarp      | Timpani
-  | StringEnsemble1       | StringEnsemble2     | SynthStrings1
-  | SynthStrings2         | ChoirAahs           | VoiceOohs | SynthVoice
-  | OrchestraHit          | Trumpet             | Trombone  | Tuba
-  | MutedTrumpet          | FrenchHorn          | BrassSection | SynthBrass1
-  | SynthBrass2           | SopranoSax          | AltoSax | TenorSax
-  | BaritoneSax    | Oboe | Bassoon  | EnglishHorn          | Clarinet
-  | Piccolo               | Flute    | Recorder | PanFlute  | BlownBottle
-  | Shakuhachi            | Whistle  | Ocarina  | Lead1Square
-  | Lead2Sawtooth         | Lead3Calliope       | Lead4Chiff
-  | Lead5Charang          | Lead6Voice          | Lead7Fifths
-  | Lead8BassLead         | Pad1NewAge          | Pad2Warm
-  | Pad3Polysynth         | Pad4Choir           | Pad5Bowed
-  | Pad6Metallic          | Pad7Halo            | Pad8Sweep
-  | FX1Train              | FX2Soundtrack       | FX3Crystal
-  | FX4Atmosphere         | FX5Brightness       | FX6Goblins
-  | FX7Echoes             | FX8SciFi            | Sitar | Banjo  | Shamisen
-  | Koto | Kalimba        | Bagpipe             | Fiddle | Shanai
-  | TinkleBell    | Agogo | SteelDrums          | Woodblock      | TaikoDrum
-  | MelodicDrum           | SynthDrum           | ReverseCymbal
-  | GuitarFretNoise       | BreathNoise         | Seashore
-  | BirdTweet             | TelephoneRing       | Helicopter
-  | Applause              | Gunshot             | Percussion
-
-{-| Instrument to Integer -}
-instrumentToInt : IName -> Int
-instrumentToInt inst =
-  case inst of
-    AcousticGrandPiano   -> 0
-    BrightAcousticPiano  -> 1
-    ElectricGrandPiano   -> 2
-    HonkyTonkPiano       -> 3
-    RhodesPiano          -> 4
-    ChorusedPiano        -> 5
-    Harpsichord          -> 6
-    Clavinet             -> 7
-    Celesta              -> 8
-    Glockenspiel         -> 9
-    MusicBox             -> 10
-    Vibraphone           -> 11
-    Marimba              -> 12
-    Xylophone            -> 13
-    TubularBells         -> 14
-    Dulcimer             -> 15
-    HammondOrgan         -> 16
-    PercussiveOrgan      -> 17
-    RockOrgan            -> 18
-    ChurchOrgan          -> 19
-    ReedOrgan            -> 20
-    Accordion            -> 21
-    Harmonica            -> 22
-    TangoAccordion       -> 23
-    AcousticGuitarNylon  -> 24
-    AcousticGuitarSteel  -> 25
-    ElectricGuitarJazz   -> 26
-    ElectricGuitarClean  -> 27
-    ElectricGuitarMuted  -> 28
-    OverdrivenGuitar     -> 29
-    DistortionGuitar     -> 30
-    GuitarHarmonics      -> 31
-    AcousticBass         -> 32
-    ElectricBassFingered -> 33
-    ElectricBassPicked   -> 34
-    FretlessBass         -> 35
-    SlapBass1            -> 36
-    SlapBass2            -> 37
-    SynthBass1           -> 38
-    SynthBass2           -> 39
-    Violin               -> 40
-    Viola                -> 41
-    Cello                -> 42
-    Contrabass           -> 43
-    TremoloStrings       -> 44
-    PizzicatoStrings     -> 45
-    OrchestralHarp       -> 46
-    Timpani              -> 47
-    StringEnsemble1      -> 48
-    StringEnsemble2      -> 49
-    SynthStrings1        -> 50
-    SynthStrings2        -> 51
-    ChoirAahs            -> 52
-    VoiceOohs            -> 53
-    SynthVoice           -> 54
-    OrchestraHit         -> 55
-    Trumpet              -> 56
-    Trombone             -> 57
-    Tuba                 -> 58
-    MutedTrumpet         -> 59
-    FrenchHorn           -> 60
-    BrassSection         -> 61
-    SynthBrass1          -> 62
-    SynthBrass2          -> 63
-    SopranoSax           -> 64
-    AltoSax              -> 65
-    TenorSax             -> 66
-    BaritoneSax          -> 67
-    Oboe                 -> 68
-    Bassoon              -> 69
-    EnglishHorn          -> 70
-    Clarinet             -> 71
-    Piccolo              -> 72
-    Flute                -> 73
-    Recorder             -> 74
-    PanFlute             -> 75
-    BlownBottle          -> 76
-    Shakuhachi           -> 77
-    Whistle              -> 78
-    Ocarina              -> 79
-    Lead1Square          -> 80
-    Lead2Sawtooth        -> 81
-    Lead3Calliope        -> 82
-    Lead4Chiff           -> 83
-    Lead5Charang         -> 84
-    Lead6Voice           -> 85
-    Lead7Fifths          -> 86
-    Lead8BassLead        -> 87
-    Pad1NewAge           -> 88
-    Pad2Warm             -> 89
-    Pad3Polysynth        -> 90
-    Pad4Choir            -> 91
-    Pad5Bowed            -> 92
-    Pad6Metallic         -> 93
-    Pad7Halo             -> 94
-    Pad8Sweep            -> 95
-    FX1Train             -> 96
-    FX2Soundtrack        -> 97
-    FX3Crystal           -> 98
-    FX4Atmosphere        -> 99
-    FX5Brightness        -> 100
-    FX6Goblins           -> 101
-    FX7Echoes            -> 102
-    FX8SciFi             -> 103
-    Sitar                -> 104
-    Banjo                -> 105
-    Shamisen             -> 106
-    Koto                 -> 107
-    Kalimba              -> 108
-    Bagpipe              -> 109
-    Fiddle               -> 110
-    Shanai               -> 111
-    TinkleBell           -> 112
-    Agogo                -> 113
-    SteelDrums           -> 114
-    Woodblock            -> 115
-    TaikoDrum            -> 116
-    MelodicDrum          -> 117
-    SynthDrum            -> 118
-    ReverseCymbal        -> 119
-    GuitarFretNoise      -> 120
-    BreathNoise          -> 121
-    Seashore             -> 122
-    BirdTweet            -> 123
-    TelephoneRing        -> 124
-    Helicopter           -> 125
-    Applause             -> 126
-    Gunshot              -> 127
-    Percussion           -> 128
 
 {-| Treating pitches simply as integers
 -}
@@ -491,10 +367,144 @@ repeatM n m =  List.repeat n m |> line
 dur : Music -> Dur
 dur music =
   case music of
-    (Note _ d)    -> d
-    (Rest d)      -> d
-    (Sequence m1 m2)   -> dur m1 `addD` dur m2
-    (Parallel m1 m2)   -> dur m1 `maxD` dur m2
-    (Tempo  a  m) -> dur m `divideD` a
-    (Trans  _  m) -> dur m
-    (Instr  _  m) -> dur m
+    (Note _ d)       -> d
+    (Rest d)         -> d
+    (Sequence m1 m2) -> dur m1 `addD` dur m2
+    (Parallel m1 m2) -> dur m1 `maxD` dur m2
+    (Tempo  a  m)    -> dur m `divideD` a
+    (Trans  _  m)    -> dur m
+    (Instr  _  m)    -> dur m
+
+{-| Instrument to Integer -}
+instrumentToInt : IName -> Int
+instrumentToInt inst =
+  case inst of
+    AcousticGrandPiano   -> 0
+    BrightAcousticPiano  -> 1
+    ElectricGrandPiano   -> 2
+    HonkyTonkPiano       -> 3
+    RhodesPiano          -> 4
+    ChorusedPiano        -> 5
+    Harpsichord          -> 6
+    Clavinet             -> 7
+    Celesta              -> 8
+    Glockenspiel         -> 9
+    MusicBox             -> 10
+    Vibraphone           -> 11
+    Marimba              -> 12
+    Xylophone            -> 13
+    TubularBells         -> 14
+    Dulcimer             -> 15
+    HammondOrgan         -> 16
+    PercussiveOrgan      -> 17
+    RockOrgan            -> 18
+    ChurchOrgan          -> 19
+    ReedOrgan            -> 20
+    Accordion            -> 21
+    Harmonica            -> 22
+    TangoAccordion       -> 23
+    AcousticGuitarNylon  -> 24
+    AcousticGuitarSteel  -> 25
+    ElectricGuitarJazz   -> 26
+    ElectricGuitarClean  -> 27
+    ElectricGuitarMuted  -> 28
+    OverdrivenGuitar     -> 29
+    DistortionGuitar     -> 30
+    GuitarHarmonics      -> 31
+    AcousticBass         -> 32
+    ElectricBassFingered -> 33
+    ElectricBassPicked   -> 34
+    FretlessBass         -> 35
+    SlapBass1            -> 36
+    SlapBass2            -> 37
+    SynthBass1           -> 38
+    SynthBass2           -> 39
+    Violin               -> 40
+    Viola                -> 41
+    Cello                -> 42
+    Contrabass           -> 43
+    TremoloStrings       -> 44
+    PizzicatoStrings     -> 45
+    OrchestralHarp       -> 46
+    Timpani              -> 47
+    StringEnsemble1      -> 48
+    StringEnsemble2      -> 49
+    SynthStrings1        -> 50
+    SynthStrings2        -> 51
+    ChoirAahs            -> 52
+    VoiceOohs            -> 53
+    SynthVoice           -> 54
+    OrchestraHit         -> 55
+    Trumpet              -> 56
+    Trombone             -> 57
+    Tuba                 -> 58
+    MutedTrumpet         -> 59
+    FrenchHorn           -> 60
+    BrassSection         -> 61
+    SynthBrass1          -> 62
+    SynthBrass2          -> 63
+    SopranoSax           -> 64
+    AltoSax              -> 65
+    TenorSax             -> 66
+    BaritoneSax          -> 67
+    Oboe                 -> 68
+    Bassoon              -> 69
+    EnglishHorn          -> 70
+    Clarinet             -> 71
+    Piccolo              -> 72
+    Flute                -> 73
+    Recorder             -> 74
+    PanFlute             -> 75
+    BlownBottle          -> 76
+    Shakuhachi           -> 77
+    Whistle              -> 78
+    Ocarina              -> 79
+    Lead1Square          -> 80
+    Lead2Sawtooth        -> 81
+    Lead3Calliope        -> 82
+    Lead4Chiff           -> 83
+    Lead5Charang         -> 84
+    Lead6Voice           -> 85
+    Lead7Fifths          -> 86
+    Lead8BassLead        -> 87
+    Pad1NewAge           -> 88
+    Pad2Warm             -> 89
+    Pad3Polysynth        -> 90
+    Pad4Choir            -> 91
+    Pad5Bowed            -> 92
+    Pad6Metallic         -> 93
+    Pad7Halo             -> 94
+    Pad8Sweep            -> 95
+    FX1Train             -> 96
+    FX2Soundtrack        -> 97
+    FX3Crystal           -> 98
+    FX4Atmosphere        -> 99
+    FX5Brightness        -> 100
+    FX6Goblins           -> 101
+    FX7Echoes            -> 102
+    FX8SciFi             -> 103
+    Sitar                -> 104
+    Banjo                -> 105
+    Shamisen             -> 106
+    Koto                 -> 107
+    Kalimba              -> 108
+    Bagpipe              -> 109
+    Fiddle               -> 110
+    Shanai               -> 111
+    TinkleBell           -> 112
+    Agogo                -> 113
+    SteelDrums           -> 114
+    Woodblock            -> 115
+    TaikoDrum            -> 116
+    MelodicDrum          -> 117
+    SynthDrum            -> 118
+    ReverseCymbal        -> 119
+    GuitarFretNoise      -> 120
+    BreathNoise          -> 121
+    Seashore             -> 122
+    BirdTweet            -> 123
+    TelephoneRing        -> 124
+    Helicopter           -> 125
+    Applause             -> 126
+    Gunshot              -> 127
+    Percussion           -> 128
