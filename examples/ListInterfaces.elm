@@ -15,12 +15,6 @@ import Music exposing (..)
 synch = "Synth input port (16600:0)"
 keyboard = "Virtual Keyboard"
 
-selectInstrument : String -> Dict ID MIDIPort -> ID
-selectInstrument name instruments =
-  let ids = Dict.foldr (\key val keyList ->
-                        if val.name == name then key :: keyList
-                        else keyList) [] instruments
-  in List.head ids |> withDefault "unknown"
 
 midiOut : Signal.Mailbox ChannelMessage
 midiOut =
@@ -31,11 +25,12 @@ port midiOutPort = midiOut.signal
 
 c4on = NoteOn 1 (absPitch (C, 4)) 50
 
+
 port midiAccess : Task x ()
 port midiAccess =
   WebMidi.requestMIDIAccess defaultSettings
-           `andThen` \midi -> WebMidi.open (selectInstrument synch midi.outputs) midiOut.signal
-           `andThen` \outPort -> WebMidi.open (selectInstrument keyboard midi.inputs) WebMidi.channel
+           `andThen` \midi -> WebMidi.open (withDefault "none" (selectInstrument synch midi.outputs)) midiOut.signal
+           `andThen` \outPort -> WebMidi.open (withDefault "none" (selectInstrument keyboard midi.inputs)) WebMidi.channel
            `andThen` \p -> Signal.send midiOut.address (encodeChannelEvent c4on 0)
            `andThen` \out -> report midi
 

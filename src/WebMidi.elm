@@ -12,7 +12,7 @@ order to enable developers to build powerful MIDI software on top..
 
 # Wiring MIDI I/O devices with runtime signals.
 
-@docs open, close, ID
+@docs open, close, ID, selectInstrument
 
 # Sends a MIDI message to the specified device(s) at the specified
   timestamp.
@@ -104,6 +104,15 @@ open =
 close : ID -> Task x MIDIPort
 close =
   Native.WebMidi.close
+
+{-| Select device  ID by device name -}
+selectInstrument : String -> Dict ID MIDIPort -> Maybe ID
+selectInstrument name instruments =
+  let ids = Dict.foldr (\key val keyList ->
+                        if val.name == name then key :: keyList
+                        else keyList) [] instruments
+  in List.head ids
+
 
 {-| The current performance time used in MIDI events. -}
 performance : Signal float

@@ -97,7 +97,6 @@ by the time-stamp on one of our Events gives us the proper delta-time
 toDelta : Float -> Float
 toDelta t = (t * 4.0 * division)
 
-
 {-| converts a Performance into the MidiFile data type -}
 performToMidi : Performance -> MidiFile
 performToMidi pf =

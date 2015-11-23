@@ -37,7 +37,6 @@ type MEvent = ChannelEvent ElapsedTime ChannelEvent
 {-| MIDI ElapsedTime -}
 type alias ElapsedTime  = HighResTimeStamp
 
-
 {-| Midi Events
 - NoteOn ch p v turns on note (pitch) p with velocity (volume) v on MIDI channel ch.
 - NoteOff ch p v performs a similar function in turning the note off.
@@ -89,7 +88,7 @@ type MetaEvent = SequenceNum Int
                | KeySig KeyName Mode
                | SequencerSpecific List Int
 
-{-|-}
+{-| Type aliases for common values -}
 type alias MPitch      = Int
 {-|-}
 type alias Velocity    = Int
@@ -119,8 +118,6 @@ type alias SMPTEFrames = Int
 type alias SMPTEBits   = Int
 
 
-
-
 {-| Channel Messages commands -}
 channelMessages : { noteoff: Int
                   , noteon: Int
@@ -140,7 +137,6 @@ channelMessages = { noteoff = 8            -- 0x8
                   , channelaftertouch = 13 -- 0xD
                   , pitchbend = 14         -- 0xE
                   }
-
 
 {-| Decode channel event and event time from received channel message
 -}
