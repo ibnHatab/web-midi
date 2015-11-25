@@ -52,6 +52,7 @@ type ChannelEvent = NoteOff    MidiChannel MPitch Velocity       -- noteoff
                   | PitchBend  MidiChannel PBRange               -- pitchbend
                   | MonoAfter  MidiChannel Pressure              -- channelaftertouch
                   | Mode       MidiChannel ControlNum ControlVal -- channelmode
+                  | UnknownChEv String
 
 {-| System Events
  Event emitted when a system MIDI message has been received.
@@ -159,6 +160,8 @@ decodeChannelEvent { command, data1, data2, timestamp, channel } =
              -> MonoAfter channel (data1 // 127)
            | command == channelMessages.pitchbend
              -> PitchBend channel (((data2 * 128) + data1 - 8192) // 8192)
+           | otherwise ->
+             UnknownChEv (toString command)
   in ChannelEvent timestamp channelEvent
 
 {-| Encode MIDI Event into Channel event -}

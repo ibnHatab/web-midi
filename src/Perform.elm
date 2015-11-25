@@ -32,10 +32,10 @@ type alias DurT = Float
 to use, and the proper key and tempo
 -}
 type alias Context =
-  { cTime : Time
-  , cInst : IName
-  , cDur  : DurT
-  , cKey  : Key
+  { cTime : Time                -- start time
+  , cInst : IName               -- midi instrument
+  , cDur  : DurT                -- note duration in sec
+  , cKey  : Key                 -- composition Key
   }
 
 {-| Performance Key -}
@@ -75,15 +75,13 @@ perf ({ cTime, cInst, cDur, cKey } as ctx) m =
 
 {-| Merging two performances over time -}
 merge : Performance -> Performance -> Performance
-merge (e1::es1 as a) (e2::es2 as b) =
+merge es1 es2 =
   case (es1, es2) of
-    ([], res) ->
-      res
-    (les, []) ->
-      les
-    otherwise ->
-      if .eTime e1 < .eTime e2 then e1 :: merge es1 b
-      else e2 :: merge a es2
+    ([], es2) -> es2
+    (es1, []) -> es1
+    (e1::es1', e2::es2') ->
+      if .eTime e1 < .eTime e2 then e1 :: merge es1' es2
+      else e2 :: merge es1 es2'
 
 {-|
 there are 96 time-code divisions per quarter note
@@ -135,7 +133,8 @@ performToMEvs (ch,pn,perf)
                    e::es ->
                      let (mev1,mev2) = mkMEvents ch e
                      in  mev1 :: insertMEvent mev2 (loop es)
-    in  setupInst :: setTempo :: loop perf
+    in  -- setupInst ::
+        setTempo :: loop perf
 
 {-| Meke Note delimeters -}
 mkMEvents : MidiChannel -> Event -> (MEvent,MEvent)

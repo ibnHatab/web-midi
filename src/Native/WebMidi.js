@@ -93,12 +93,17 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         var midiOutSignal = localRuntime.ports["midiOut-" + signal.name];
 
                         midiOutSignal.subscribe(function(e) {
+                            console.log(port)
+                            console.log(e)
                             if ("command" in e) {
                                 var status = (e.command << 4) + (e.channel - 1)
                                 var message = [status, e.data1];
 
                                 if (e.data2 > 0) { message.push(e.data2); }
-                                port.send(message, e.timestamp);
+
+                                console.log(message)
+                                //port.send(message, e.timestamp);
+                                port.send([ 0x90, 0x45, 0x7f ] );
                             } if ("event" in e) {
                                 var message = [e.event];
                                 if (e.data > 0) { message.push(e.data); }
@@ -120,6 +125,8 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         port.onmidimessage = function(event) {
                             if (event.data[0] < 240) {      // device and channel-specific message
                                 var elmEvent = handleChannelEvent(event);
+                                console.log(event.data)
+                                console.log(elmEvent)
                                 localRuntime.notify(channelIn.id, elmEvent);
                             } else if (e.data[0] <= 255) {  // system message
                                 var elmEvent = handleSystemEvent(event);
@@ -161,11 +168,11 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
     function makeChannelMessage(a, b, c, d, e) {
         return {_: {}
-                ,command: a
-                ,data1: b
-                ,data2: c
-                ,channel: d
-                ,timestamp: d
+                 ,command: a
+                 ,data1: b
+                 ,data2: c
+                 ,channel: d
+                 ,timestamp: d
                };
     }
 
