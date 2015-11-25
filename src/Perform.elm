@@ -124,23 +124,23 @@ splitByInst p =
 converts a Performance into a stream of MEvents (i.e., a Track).
 -}
 performToMEvs : (MidiChannel,ProgNum,Performance) -> Track
-performToMEvs (ch,pn,perf)
-  = let tempo = 500000
-        setupInst   = ChannelEvent 0 (ProgChange ch pn)
-        setTempo    = MetaEvent 0 (SetTempo tempo)
-        loop p = case p of
-                   [] -> []
-                   e::es ->
-                     let (mev1,mev2) = mkMEvents ch e
-                     in  mev1 :: insertMEvent mev2 (loop es)
-    in  -- setupInst ::
-        setTempo :: loop perf
+performToMEvs (ch, pn, perf) =
+  let tempo = 500000
+      setupInst   = ChannelEvent 0 (ProgChange ch pn)
+      setTempo    = MetaEvent 0 (SetTempo tempo)
+      loop p = case p of
+                 [] -> []
+                 e::es ->
+                   let (mev1,mev2) = mkMEvents ch e
+                   in  mev1 :: insertMEvent mev2 (loop es)
+  in  -- setupInst ::
+      setTempo :: loop perf
 
 {-| Meke Note delimeters -}
 mkMEvents : MidiChannel -> Event -> (MEvent,MEvent)
 mkMEvents mChan { eTime, ePitch, eDur }
-  = (ChannelEvent (toDelta eTime) (NoteOn  mChan ePitch 127),
-     ChannelEvent (toDelta (eTime+eDur)) (NoteOff mChan ePitch 127))
+  = (ChannelEvent (toDelta eTime) (NoteOn (mChan+1) ePitch 50),
+     ChannelEvent (toDelta (eTime+eDur)) (NoteOff (mChan+1) ePitch 50))
 
 {-| Insert event with respect of timestamp -}
 insertMEvent : MEvent -> List MEvent -> List MEvent

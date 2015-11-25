@@ -93,17 +93,16 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         var midiOutSignal = localRuntime.ports["midiOut-" + signal.name];
 
                         midiOutSignal.subscribe(function(e) {
-                            console.log(port)
-                            console.log(e)
                             if ("command" in e) {
                                 var status = (e.command << 4) + (e.channel - 1)
                                 var message = [status, e.data1];
 
                                 if (e.data2 > 0) { message.push(e.data2); }
 
+                                console.log(e)
                                 console.log(message)
-                                //port.send(message, e.timestamp);
-                                port.send([ 0x90, 0x45, 0x7f ] );
+                                port.send(message, e.timestamp + performance.now());
+//                                port.send([ 0x90, 0x45, 0x7f ] );
                             } if ("event" in e) {
                                 var message = [e.event];
                                 if (e.data > 0) { message.push(e.data); }
@@ -205,9 +204,14 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
     // SIGNALS
 
-    var performance = Signal.input('WebMidi.performance', function () {
-        console.error("FIXME")
-        performance.now()});
+    var getCurrentTime = Task.asyncFunction(function(callback) {
+	return callback(Task.succeed(performance.now()));
+    });
+
+
+    // var performance = Signal.input('WebMidi.performance', function () {
+    //     console.error("FIXME")
+    //     performance.now()});
 
     var channelIn = Signal.input('WebMidi.channel', makeChannelMessage(0,0,0,0,0));
 
@@ -217,8 +221,8 @@ Elm.Native.WebMidi.make = function(localRuntime) {
         requestMIDIAccess: requestMIDIAccess,
         open: F2(open),
         close: close,
-        performance: performance,
         channel: channelIn,
-        system: systemIn
+        system: systemIn,
+        jiffy: getCurrentTime
     };
 };

@@ -16,7 +16,7 @@ The online MIDI 1.0 spec. http://www.midi.org/techspecs/midimessages.php
 
 -}
 
-import WebMidi exposing (ChannelMessage, SystemMessage, ID, HighResTimeStamp)
+import WebMidi exposing (ChannelMessage, SystemMessage, ID, HighResTimeStamp, none)
 import Music exposing (KeyName, Mode)
 
 {-| MIDI File -}
@@ -165,8 +165,8 @@ decodeChannelEvent { command, data1, data2, timestamp, channel } =
   in ChannelEvent timestamp channelEvent
 
 {-| Encode MIDI Event into Channel event -}
-encodeChannelEvent : ChannelEvent -> ElapsedTime -> ChannelMessage
-encodeChannelEvent event timestamp =
+encodeChannelEvent :  ElapsedTime -> ChannelEvent-> ChannelMessage
+encodeChannelEvent timestamp event  =
   let
     msgAt =
       case event of
@@ -186,6 +186,7 @@ encodeChannelEvent event timestamp =
           ChannelMessage channelMessages.channelaftertouch pressure -1 ch
         Mode ch num val ->
           ChannelMessage channelMessages.channelmode num val ch
+        otherwise -> ChannelMessage 0 0 0 0
   in msgAt timestamp
 
 {-| System Messages event id -}

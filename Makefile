@@ -25,7 +25,7 @@ test: $(TESTS_JS)
 
 %.elm.test.js: %.elm
 	elm-make --yes $< --output tests/raw.test.js
-	$(ELM_IO) tests/raw.test.js $<.test.js
+	bash $(ELM_IO) tests/raw.test.js $<.test.js
 	node $<.test.js && rm $<.test.js tests/raw.test.js
 
 clean-test:

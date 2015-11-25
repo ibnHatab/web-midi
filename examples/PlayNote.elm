@@ -23,7 +23,7 @@ port midiAccess =
   WebMidi.requestMIDIAccess defaultSettings
            `andThen` \midi -> WebMidi.open (withDefault "none"
                                             (selectInstrument synch midi.outputs)) midiOut.signal
-           `andThen` \p -> Signal.send midiOut.address (encodeChannelEvent c4on 0)
+           `andThen` \p -> Signal.send midiOut.address (encodeChannelEvent 0 c4on)
 
 main : Html
 main = text "Play C4"

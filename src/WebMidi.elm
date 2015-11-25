@@ -22,7 +22,7 @@ order to enable developers to build powerful MIDI software on top..
 
 # Utils to synchronously perform music
 
-@docs performance, channel, system
+@docs jiffy, channel, system
 
 
 -}
@@ -114,10 +114,10 @@ selectInstrument name instruments =
   in List.head ids
 
 
-{-| The current performance time used in MIDI events. -}
-performance : Signal float
-performance =
-  Native.WebMidi.performance
+{-| High Resolution Time used in MIDI events. -}
+jiffy : Task x Float
+jiffy =
+  Native.WebMidi.jiffy
 
 {-| channel input multiplexer -}
 channel : Signal ChannelMessage
