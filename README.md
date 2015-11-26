@@ -60,7 +60,7 @@
 - Compose simple tune
 
 
-```
+```elm
 cMaj = [c,e',g] |> List.map (\n -> n 4 hn)
 
 cMajArp = Music.line  cMaj
@@ -73,7 +73,7 @@ tune = (Music.repeatM 3 cMajArp) :+: cMajChd
 
 - Convert it to performance
 
-```
+```elm
 ctx : Context
 ctx = Context 0 AcousticGrandPiano 3 0
 
