@@ -57,6 +57,31 @@
 - Events `track` extracted from MIDI File structure which resemble
   MIDI Type 1 file with stream per instrument track list.
 
+- Compose simple tune
+
+
+```
+cMaj = [c,e',g] |> List.map (\n -> n 4 hn)
+
+cMajArp = Music.line  cMaj
+cMajChd = Music.chord cMaj
+
+tune : Music
+tune = (Music.repeatM 3 cMajArp) :+: cMajChd
+
+```
+
+- Convert it to performance
+
+```
+ctx : Context
+ctx = Context 0 AcousticGrandPiano 3 0
+
+performance : Performance
+performance = performM ctx tune
+
+```
+
   [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/PerformMusic.html)
 
 

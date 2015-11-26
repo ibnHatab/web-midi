@@ -13306,67 +13306,6 @@ Elm.PerformMusic.make = function (_elm) {
    $Music.AcousticGrandPiano,
    3,
    0);
-   var mkLn = F3(function (n,p,d) {
-      return A2($Music.repeatM,
-      n,
-      A2($Music.Note,p,d));
-   });
-   var pr2 = function (p) {
-      return function () {
-         var m2 = A3(mkLn,
-         3,
-         p,
-         $Music.en);
-         var m1 = A2($Music.Tempo,
-         A2($Music._op[":%:"],5,4),
-         A2($Music._op[":+:"],
-         A2($Music.Tempo,
-         A2($Music._op[":%:"],3,2),
-         m2),
-         m2));
-         return A2($Music.Tempo,
-         A2($Music._op[":%:"],7,6),
-         A2($Music._op[":+:"],
-         A2($Music._op[":+:"],
-         A2($Music._op[":+:"],
-         m1,
-         A2($Music.Tempo,
-         A2($Music._op[":%:"],5,4),
-         A3(mkLn,5,p,$Music.en))),
-         m1),
-         A2($Music.Tempo,
-         A2($Music._op[":%:"],3,2),
-         m2)));
-      }();
-   };
-   var pr1 = function (p) {
-      return A2($Music.Tempo,
-      A2($Music._op[":%:"],5,6),
-      A2($Music._op[":+:"],
-      A2($Music.Tempo,
-      A2($Music._op[":%:"],4,3),
-      A2($Music._op[":+:"],
-      A2($Music._op[":+:"],
-      A3(mkLn,1,p,$Music.qn),
-      A2($Music.Tempo,
-      A2($Music._op[":%:"],3,2),
-      A2($Music._op[":+:"],
-      A2($Music._op[":+:"],
-      A3(mkLn,3,p,$Music.en),
-      A3(mkLn,2,p,$Music.sn)),
-      A3(mkLn,1,p,$Music.qn)))),
-      A3(mkLn,1,p,$Music.qn))),
-      A2($Music.Tempo,
-      A2($Music._op[":%:"],3,2),
-      A3(mkLn,6,p,$Music.en))));
-   };
-   var poly = A2($Music._op[":=:"],
-   pr1({ctor: "_Tuple2"
-       ,_0: $Music.C
-       ,_1: 5}),
-   pr2({ctor: "_Tuple2"
-       ,_0: $Music.G
-       ,_1: 5}));
    var cMaj = $List.map(function (n) {
       return A2(n,4,$Music.hn);
    })(_L.fromArray([$Music.c
@@ -13389,7 +13328,7 @@ Elm.PerformMusic.make = function (_elm) {
               {case "Ticks": return _._0._0;}
               break;}
          _U.badCase($moduleName,
-         "on line 82, column 37 to 65");
+         "on line 57, column 37 to 65");
       }();
       var tracks = function () {
          switch (_.ctor)
@@ -13398,7 +13337,7 @@ Elm.PerformMusic.make = function (_elm) {
               {case "Ticks": return _._1;}
               break;}
          _U.badCase($moduleName,
-         "on line 82, column 37 to 65");
+         "on line 57, column 37 to 65");
       }();
       return $Maybe.withDefault(_L.fromArray([]))($List.head(tracks));
    }();
@@ -13460,10 +13399,6 @@ Elm.PerformMusic.make = function (_elm) {
                               ,cMajArp: cMajArp
                               ,cMajChd: cMajChd
                               ,tune: tune
-                              ,pr1: pr1
-                              ,pr2: pr2
-                              ,mkLn: mkLn
-                              ,poly: poly
                               ,ctx: ctx
                               ,performance: performance
                               ,trackOne: trackOne
