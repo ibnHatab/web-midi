@@ -8,8 +8,8 @@ module Music where
 @docs Music, Dur, IName, trans, dur, instrumentToInt
 
 # Arifmetic
-@docs normalizeD, addD, multiplyD, divideD, toFloatD, maxD
-@docs (:+:), (:=:), (!!), (:%:)
+@docs normalizeD, addD, mulD, divD, toFloatD, maxD
+@docs (:+:), (:=:), (!!), (:%:), (=:=)
 
 # Representation
 @docs AbsPitch, absPitch, pitches, pitch, pcToInt
@@ -84,6 +84,10 @@ type Music = Note Pitch Dur
 (:=:) : Music -> Music -> Music
 (:=:) = Parallel
 
+{-| Adjust duration ?? -}
+(=:=) : Dur -> Dur -> Music -> Music
+old =:= new = Tempo (new `divD` old)
+
 {-| General MIDI Standard instruments -}
 type IName
   = AcousticGrandPiano    | BrightAcousticPiano | ElectricGrandPiano
@@ -140,14 +144,14 @@ addD (Dur a b) (Dur c d) =
   normalizeD (Dur (a * d + b * c) (b * d))
 
 {-| Dur multiplication  -}
-multiplyD : Dur -> Dur -> Dur
-multiplyD (Dur a b) (Dur c d) =
+mulD : Dur -> Dur -> Dur
+mulD (Dur a b) (Dur c d) =
   normalizeD (Dur (a * c) (b * d))
 
 {-| Dur division -}
-divideD : Dur -> Dur -> Dur
-divideD r (Dur a b) =
-  multiplyD r (Dur b a)
+divD : Dur -> Dur -> Dur
+divD r (Dur a b) =
+  mulD r (Dur b a)
 
 {-| Radio to Float -}
 toFloatD : Dur -> Float
@@ -375,7 +379,7 @@ dur music =
     (Rest d)         -> d
     (Sequence m1 m2) -> dur m1 `addD` dur m2
     (Parallel m1 m2) -> dur m1 `maxD` dur m2
-    (Tempo  a  m)    -> dur m `divideD` a
+    (Tempo  a  m)    -> dur m `divD` a
     (Trans  _  m)    -> dur m
     (Instr  _  m)    -> dur m
 
