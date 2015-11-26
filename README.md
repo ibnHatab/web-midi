@@ -7,8 +7,8 @@
 ## Examples
 
 1. [List MIDI Ports](examples/ListMIDIPorts.elm)
-
-Demonstrate how to request access to MIDI system.
+   Demonstrate how to request access to MIDI system.
+   [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/ListMIDIPorts.html)
 
 ```elm
   WebMidi.requestMIDIAccess defaultSettings
@@ -19,6 +19,7 @@ Demonstrate how to request access to MIDI system.
 - Access MIDI sysbsystem
 - Open Synch input port and associate it to output port via mailbox
 - Send Event with encoded note to the mailbox
+  [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/PlayNote.html)
 
 ```elm
   synch = "Synth input port (16600:0)"
@@ -29,10 +30,12 @@ Demonstrate how to request access to MIDI system.
            `andThen` \p -> Signal.send midiOut.address (encodeChannelEvent c4on 0)
 
 ```
-3. [Listent to input events from keyboard](examples/PlayNote.elm)
+3. [Listent to input events from keyboard](examples/InputEventsFromKbd.elm)
 - Open input port by name. Second argument is `WebMidi.channel` which
   is multiplexed input port for all instruments.
 - Listen on all input events: channel and system. Those from system comming on predefined `WebMidi.system` port.
+  [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/InputEventsFromKbd.html)
+
 
 ```elm
   keyboard = "Virtual Keyboard"
@@ -54,6 +57,7 @@ Demonstrate how to request access to MIDI system.
 - Events `track` extracted from MIDI File structure which resemble
   MIDI Type 1 file with stream per instrument track list.
 
+  [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/PerformMusic.html)
 
 
 ## Start MIDI Synch on Linux
