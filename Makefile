@@ -11,6 +11,12 @@ TESTS_JS=$(patsubst %.elm,%.elm.test.js,$(TESTS))
 TARGETS=$(wildcard examples/*.elm)
 TARGETS_JS=$(patsubst %.elm,%.js,$(TARGETS))
 
+DEMO =  demo/InputEventsFromKbd.html \
+	demo/ListMIDIPorts.html	\
+	demo/PerformMusic.html	\
+	demo/PlayNote.html
+
+
 all: compile
 
 compile: $(TARGETS_JS)
@@ -19,6 +25,10 @@ compile: $(TARGETS_JS)
 %.js: %.elm
 	@echo 'Compile $(ELM_COMPILE)  $<'
 	$(ELM_COMPILE) $< --output $@
+
+demo: $(DEMO)
+demo/%.html: examples/%.elm
+	elm-make --yes $< --output $@
 
 
 test: $(TESTS_JS)
