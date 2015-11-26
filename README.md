@@ -6,7 +6,7 @@
 
 ## Examples
 
-1. [List MIDI Ports](examples/ListMIDIPorts.elm)
+### [List MIDI Ports](examples/ListMIDIPorts.elm)
    Demonstrate how to request access to MIDI system.
 
 ```elm
@@ -14,7 +14,7 @@
 ```
    [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/ListMIDIPorts.html)
 
-2. [Play a Note](examples/PlayNote.elm)
+### [Play a Note](examples/PlayNote.elm)
 
 - Access MIDI sysbsystem
 - Open Synch input port and associate it to output port via mailbox
@@ -31,7 +31,7 @@
 ```
   [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/PlayNote.html)
 
-3. [Listent to input events from keyboard](examples/InputEventsFromKbd.elm)
+### [Listent to input events from keyboard](examples/InputEventsFromKbd.elm)
 - Open input port by name. Second argument is `WebMidi.channel` which
   is multiplexed input port for all instruments.
 - Listen on all input events: channel and system. Those from system comming on predefined `WebMidi.system` port.
@@ -51,7 +51,7 @@
 ```
     [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/InputEventsFromKbd.html)
 
-4. [Perform music](examples/PerformMusic.elm)
+### [Perform music](examples/PerformMusic.elm)
 
 - Eccess MIDI out port as in Ex. 2
 - Chaine `WebMidi.jiffy` task which fetch current `performance.now()` time from browser.
