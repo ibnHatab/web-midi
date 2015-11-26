@@ -8,18 +8,17 @@
 
 1. [List MIDI Ports](examples/ListMIDIPorts.elm)
    Demonstrate how to request access to MIDI system.
-   [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/ListMIDIPorts.html)
 
 ```elm
   WebMidi.requestMIDIAccess defaultSettings
 ```
+   [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/ListMIDIPorts.html)
 
 2. [Play a Note](examples/PlayNote.elm)
 
 - Access MIDI sysbsystem
 - Open Synch input port and associate it to output port via mailbox
 - Send Event with encoded note to the mailbox
-  [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/PlayNote.html)
 
 ```elm
   synch = "Synth input port (16600:0)"
@@ -30,11 +29,12 @@
            `andThen` \p -> Signal.send midiOut.address (encodeChannelEvent c4on 0)
 
 ```
+  [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/PlayNote.html)
+
 3. [Listent to input events from keyboard](examples/InputEventsFromKbd.elm)
 - Open input port by name. Second argument is `WebMidi.channel` which
   is multiplexed input port for all instruments.
 - Listen on all input events: channel and system. Those from system comming on predefined `WebMidi.system` port.
-  [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/InputEventsFromKbd.html)
 
 
 ```elm
@@ -49,6 +49,8 @@
     Signal.map show (Signal.map2 (,) WebMidi.channel WebMidi.system)
 
 ```
+    [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/InputEventsFromKbd.html)
+
 4. [Perform music](examples/PerformMusic.elm)
 
 - Eccess MIDI out port as in Ex. 2
@@ -85,7 +87,7 @@ performance = performM ctx tune
   [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/PerformMusic.html)
 
 
-## Start MIDI Synch on Linux
+## Configuring MIDI Synch on Linux
 
 - Start JACK
 
@@ -101,8 +103,7 @@ performance = performM ctx tune
 
 > qsynth &
 
-.. or both
 
-Link audio inputs an MIDI instruments in `qjackl` UI.
+Link audio inputs and MIDI instruments in `qjackl` UI.
 
 ![Configure JACK connections](demo/MIDI-on-Linux.png)
