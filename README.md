@@ -11,8 +11,9 @@
 
 ```elm
   WebMidi.requestMIDIAccess defaultSettings
-```
-   [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/ListMIDIPorts.html)
+  ```
+
+[DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/ListMIDIPorts.html)
 
 ### [Play a Note](examples/PlayNote.elm)
 
@@ -29,7 +30,8 @@
            `andThen` \p -> Signal.send midiOut.address (encodeChannelEvent c4on 0)
 
 ```
-  [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/PlayNote.html)
+
+[DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/PlayNote.html)
 
 ### [Listent to input events from keyboard](examples/InputEventsFromKbd.elm)
 - Open input port by name. Second argument is `WebMidi.channel` which
@@ -49,13 +51,14 @@
     Signal.map show (Signal.map2 (,) WebMidi.channel WebMidi.system)
 
 ```
-    [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/InputEventsFromKbd.html)
+
+[DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/InputEventsFromKbd.html)
 
 ### [Perform music](examples/PerformMusic.elm)
 
 - Eccess MIDI out port as in Ex. 2
 - Chaine `WebMidi.jiffy` task which fetch current `performance.now()` time from browser.
-- Use `jiffy` as time reference to serialize `track` of MIDI events usimg task sequencer
+- Use `jiffy` as time reference to serialize `track` of MIDI events via task sequencer
 - Events `track` extracted from MIDI File structure which resemble
   MIDI Type 1 file with stream per instrument track list.
 
@@ -84,7 +87,7 @@ performance = performM ctx tune
 
 ```
 
-  [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/PerformMusic.html)
+[DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/PerformMusic.html)
 
 
 ## Configuring MIDI Synch on Linux
