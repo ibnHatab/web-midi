@@ -16,8 +16,7 @@ The online MIDI 1.0 spec. http://www.midi.org/techspecs/midimessages.php
 
 -}
 
-import WebMidi exposing (ChannelMessage, SystemMessage, ID, HighResTimeStamp, none)
-import Music exposing (KeyName, Mode)
+import WebMidi exposing (ChannelMessage, SystemMessage, ID, HighResTimeStamp)
 
 {-| MIDI File -}
 type MidiFile = MidiFile Division (List Track)
@@ -86,7 +85,6 @@ type MetaEvent = SequenceNum Int
                | SetTempo MTempo
                | SMPTEOffset SMPTEHours SMPTEMins SMPTESecs SMPTEFrames SMPTEBits
                | TimeSig Int Int Int Int
-               | KeySig KeyName Mode
                | SequencerSpecific List Int
 
 {-| Type aliases for common values -}

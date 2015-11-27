@@ -12,12 +12,12 @@ order to enable developers to build powerful MIDI software on top..
 
 # Wiring MIDI I/O devices with runtime signals.
 
-@docs open, openM, close, ID, selectInstrument
+@docs enableInput, enableOutput, close, ID, selectInstrument, OutputSignal
 
 # Sends a MIDI message to the specified device(s) at the specified
   timestamp.
 
-@docs ChannelMessage, none, SystemMessage, HighResTimeStamp
+@docs ChannelMessage, initChannelMsg, initSystemMsg, SystemMessage, HighResTimeStamp
 
 
 # Utils to synchronously perform music
@@ -62,8 +62,8 @@ type alias ChannelMessage =
   }
 
 {-| Not a message -}
-none : ChannelMessage
-none = ChannelMessage 0 0 0 0 0
+initChannelMsg : ChannelMessage
+initChannelMsg = ChannelMessage 0 0 0 0 0
 
 {-| -}
 type alias SystemMessage =
@@ -71,6 +71,10 @@ type alias SystemMessage =
   , device : ID
   , data   : Int
   }
+
+{-| Not a message -}
+initSystemMsg : SystemMessage
+initSystemMsg = SystemMessage 0 "" 0
 
 {-| Settings used by access to MIDI devices and informing on
 configuration changes. -}
@@ -94,15 +98,19 @@ requestMIDIAccess : Settings -> Task x MIDIAccess
 requestMIDIAccess =
   Native.WebMidi.requestMIDIAccess
 
-{-| Open MIDI Devices -}
-open : ID -> Signal ChannelMessage -> Task x MIDIPort
-open =
-  Native.WebMidi.open
+{-| mailbox type for MIDI messaged on channel -}
+type OutputSignal = Single (Signal ChannelMessage)
+                  | Batch (Signal (List ChannelMessage))
 
-{-| Open MIDI Devices -}
-openM : ID -> Signal (List ChannelMessage) -> Task x MIDIPort
-openM =
-  Native.WebMidi.open
+{-| Open Output MIDI Devices -}
+enableOutput : ID -> OutputSignal -> Signal SystemMessage -> Task x MIDIPort
+enableOutput =
+  Native.WebMidi.enableOutput
+
+{-| Open Input MIDI Devices -}
+enableInput : ID -> Task x MIDIPort
+enableInput =
+  Native.WebMidi.enableInput
 
 
 {-| Close MIDI Devices -}

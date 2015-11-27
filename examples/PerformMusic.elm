@@ -16,16 +16,21 @@ synch = "Synth input port (16600:0)"
 
 midiOut : Signal.Mailbox ChannelMessage
 midiOut =
-  Signal.mailbox none
-
+  Signal.mailbox initChannelMsg
 port midiOutPort : Signal ChannelMessage
 port midiOutPort = midiOut.signal
+
+sysOut : Signal.Mailbox SystemMessage
+sysOut =
+  Signal.mailbox initSystemMsg
+port sysOutPort : Signal SystemMessage
+port sysOutPort = sysOut.signal
 
 port midiAccess : Task String (List ())
 port midiAccess =
   WebMidi.requestMIDIAccess defaultSettings
            `andThen` \midi  -> Task.fromMaybe "No device found" (selectInstrument synch midi.outputs)
-           `andThen` \id    -> WebMidi.open id midiOut.signal
+           `andThen` \id    -> WebMidi.enableOutput id (Single midiOut.signal) sysOut.signal
            `andThen` \prt   -> Task.sleep second
            `andThen` \_     -> WebMidi.jiffy
            `andThen` \start -> List.map (play start) trackOne |> Task.sequence

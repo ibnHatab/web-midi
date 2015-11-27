@@ -75,10 +75,9 @@ Elm.Native.WebMidi.make = function(localRuntime) {
         })};
 
 
-    function open (id, signal) {
-
+    function enableOutput (id, channelSignal, sytemSignal) {
         return Task.asyncFunction(function(callback) {
-            var dev = midi.inputs.get(id) || midi.outputs.get(id);
+            var dev = midi.outputs.get(id);
 
             if (! dev) {
                 return callback(Task.fail(new Error("No such device found")));
@@ -86,60 +85,73 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
             dev.open().then(
                 function(port) {
-                    if(port.type === "output") {
-                        var midiOut = Port.outboundSignal("midiOut-" + signal.name,
-                                                          function (v) { return v; },
-                                                          signal);
+                    var midiOut = Port.outboundSignal("midiOut-" + channelSignal._0.name,
+                                                      function (v) { return v; },
+                                                      channelSignal._0);
 
-                        var midiOutSignal = localRuntime.ports["midiOut-" + signal.name];
+                    var midiOutSignal = localRuntime.ports["midiOut-" + channelSignal._0.name];
 
-                        if(signal.value.ctor === "::"){
-                            midiOutSignal.subscribe(function(es) {
-                                while (es.ctor !== '[]') {
-                                    var e = es._0;
-                                    var status = (e.command << 4) + (e.channel - 1)
-                                    var message = [status, e.data1];
-                                    if (e.data2 >= 0) { message.push(e.data2); }
-                                    port.send(message, e.timestamp);
-			            es = es._1;
-                                }
-                            });
-                        } else {
-                            midiOutSignal.subscribe(function(e) {
-                                if ("command" in e) {
-                                    var status = (e.command << 4) + (e.channel - 1)
-                                    var message = [status, e.data1];
+                    if(channelSignal.ctor === "Single"){
+                        midiOutSignal.subscribe(function(e) {
+                            var status = (e.command << 4) + (e.channel - 1)
+                            var message = [status, e.data1];
 
-                                    if (e.data2 >= 0) { message.push(e.data2); }
-                                    port.send(message, e.timestamp);
-                                } else if ("event" in e) {
-                                    var message = [e.event];
-                                    if (e.data >= 0) { message.push(e.data); }
-
-                                    var dev = midi.outputs.get(e.device);
-                                    dev.send(message);
-                                }
-                            });
-                        }
-
-                    } else if (port.type === "input") {
-
-                        if (! signal.id == channelIn.id) {
-                            throw new Error(
-                                "Signal Error:\n" +
-                                    "Can not associate " + signal.name + " with MIDI input.\n" +
-                                    "Use WebMidi.channel to open input device."
-                            );
-                        }
-
-                        port.onmidimessage = function(event) {
-                            if (event.data[0] < 240) {      // device and channel-specific message
-                                var elmEvent = handleChannelEvent(event);
-                                localRuntime.notify(channelIn.id, elmEvent);
-                            } else if (e.data[0] <= 255) {  // system message
-                                var elmEvent = handleSystemEvent(event);
-                                localRuntime.notify(systemIn.id, elmEvent);
+                            if (e.data2 >= 0) { message.push(e.data2); }
+                            port.send(message, e.timestamp);
+                        });
+                    } else if(channelSignal.ctor === "Batch") {
+                        midiOutSignal.subscribe(function(es) {
+                            while (es.ctor !== '[]') {
+                                var e = es._0;
+                                var status = (e.command << 4) + (e.channel - 1)
+                                var message = [status, e.data1];
+                                if (e.data2 >= 0) { message.push(e.data2); }
+                                port.send(message, e.timestamp);
+			        es = es._1;
                             }
+                        });
+                    } else {
+                        console.error("Impossible signal type");
+                    }
+
+                    var sysOut = Port.outboundSignal("sysOut-" + sytemSignal.name,
+                                                     function (v) { return v; },
+                                                     sytemSignal);
+
+                    var sysOutSignal = localRuntime.ports["sysOut-" + sytemSignal.name];
+
+                    sysOutSignal.subscribe(function(e) {
+                        var message = [e.event];
+                        if (e.data >= 0) { message.push(e.data); }
+                        var dev = midi.outputs.get(e.device);
+                        dev.send(message);
+                    });
+
+                return callback(Task.succeed(port))
+            },
+            function(error) {
+                return callback(Task.fail(error))
+            } );
+        });
+    }
+
+    function enableInput (id) {
+        return Task.asyncFunction(function(callback) {
+            var dev = midi.inputs.get(id);
+
+            if (! dev) {
+                return callback(Task.fail(new Error("No such device found")));
+            }
+
+            dev.open().then(
+                function(port) {
+                    port.onmidimessage = function(event) {
+                        if (event.data[0] < 240) {      // device and channel-specific message
+                            var elmEvent = handleChannelEvent(event);
+                            localRuntime.notify(channelIn.id, elmEvent);
+                        } else if (e.data[0] <= 255) {  // system message
+                            var elmEvent = handleSystemEvent(event);
+                            localRuntime.notify(systemIn.id, elmEvent);
                         }
                     }
 
@@ -150,6 +162,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                 } );
         });
     }
+
 
     function close (id) {
         return Task.asyncFunction(function(callback) {
@@ -223,7 +236,8 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
     return localRuntime.Native.WebMidi.values = {
         requestMIDIAccess: requestMIDIAccess,
-        open: F2(open),
+        enableOutput: F3(enableOutput),
+        enableInput: enableInput,
         close: close,
         channel: channelIn,
         system: systemIn,
