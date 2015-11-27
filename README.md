@@ -6,24 +6,26 @@
 
 ## Implementation details
 
-Obtaining Access to MIDI Devices implemented as Task to bind it nicely to promises
-returned by `requestMIDIAccess()`, `open()` and `close()` methods.
+Obtaining Access to MIDI Devices implemented as Task to bind it nicely
+to promises returned by `requestMIDIAccess()`, `open()` and `close()`
+methods.
 
-The `onstatechange` of MIDIAccess object fire task provided to `WebMidi.requestMIDIAccess` in
-parameters hash.
+The `onstatechange` of MIDIAccess object fire task provided to
+`WebMidi.requestMIDIAccess` in parameters hash.
 
-`WebMidi.open` on output device bind it with `Signal.mailbox` of `MidiMessage`.
+All `WebMidi.enableInput` events from input deviced multiplexed on two
+signals - `WebMidi.channel` and `WebMidi.system`.
 
-All events from input deviced multiplexed on two input `Signal`: `WebMidi.channel`
-and `WebMidi.system`.
+
+`WebMidi.enableOutput` handle output device and bind it with
+`ChannelMessage` and `SystemMessage` mailboxes .
 
 Channel messages coreponds to Note events and have arout 20ms jitter time until become
 sensible to processing delay. System messages can be handled in 1s message loop.
-When opening input device please give it `WebMidi.channel` as `port` parameter.
 
-There is possibility to butch MIDI events out to the system by declaring `mailbox` as
-list of MidiMessages. Then you can select all events for next tick and send them in one `Task`.
-
+There is possibility to butch MIDI events out to the system by
+declaring `mailbox` as List of ChannelMessages. Then you can select
+all events for next tick and send them in one burst.
 
 
 ## Examples

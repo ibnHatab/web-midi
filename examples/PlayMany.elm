@@ -26,7 +26,7 @@ port midiAccess : Task String ()
 port midiAccess =
   WebMidi.requestMIDIAccess defaultSettings
            `andThen` \midi -> Task.fromMaybe "No device found" (selectInstrument synch midi.outputs)
-           `andThen` \id   -> WebMidi.enableOutput id (Batch midiOut.signal) sysOut.signal
+           `andThen` \id   -> WebMidi.enableOutput id midiOut.signal sysOut.signal
            `andThen` \p    -> Signal.send midiOut.address bell
 
 bell = [ChannelEvent 1 (Control 1 0 0)     -- Control mode

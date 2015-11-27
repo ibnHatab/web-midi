@@ -85,34 +85,22 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
             dev.open().then(
                 function(port) {
-                    var midiOut = Port.outboundSignal("midiOut-" + channelSignal._0.name,
+                    var midiOut = Port.outboundSignal("midiOut-" + channelSignal.name,
                                                       function (v) { return v; },
-                                                      channelSignal._0);
+                                                      channelSignal);
 
-                    var midiOutSignal = localRuntime.ports["midiOut-" + channelSignal._0.name];
+                    var midiOutSignal = localRuntime.ports["midiOut-" + channelSignal.name];
 
-                    if(channelSignal.ctor === "Single"){
-                        midiOutSignal.subscribe(function(e) {
+                    midiOutSignal.subscribe(function(es) {
+                        while (es.ctor !== '[]') {
+                            var e = es._0;
                             var status = (e.command << 4) + (e.channel - 1)
                             var message = [status, e.data1];
-
                             if (e.data2 >= 0) { message.push(e.data2); }
                             port.send(message, e.timestamp);
-                        });
-                    } else if(channelSignal.ctor === "Batch") {
-                        midiOutSignal.subscribe(function(es) {
-                            while (es.ctor !== '[]') {
-                                var e = es._0;
-                                var status = (e.command << 4) + (e.channel - 1)
-                                var message = [status, e.data1];
-                                if (e.data2 >= 0) { message.push(e.data2); }
-                                port.send(message, e.timestamp);
-			        es = es._1;
-                            }
-                        });
-                    } else {
-                        console.error("Impossible signal type");
-                    }
+			    es = es._1;
+                        }
+                    });
 
                     var sysOut = Port.outboundSignal("sysOut-" + sytemSignal.name,
                                                      function (v) { return v; },

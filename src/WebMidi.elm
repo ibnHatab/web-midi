@@ -12,7 +12,7 @@ order to enable developers to build powerful MIDI software on top..
 
 # Wiring MIDI I/O devices with runtime signals.
 
-@docs enableInput, enableOutput, close, ID, selectInstrument, OutputSignal
+@docs enableInput, enableOutput, close, ID, selectInstrument
 
 # Sends a MIDI message to the specified device(s) at the specified
   timestamp.
@@ -98,12 +98,8 @@ requestMIDIAccess : Settings -> Task x MIDIAccess
 requestMIDIAccess =
   Native.WebMidi.requestMIDIAccess
 
-{-| mailbox type for MIDI messaged on channel -}
-type OutputSignal = Single (Signal ChannelMessage)
-                  | Batch (Signal (List ChannelMessage))
-
 {-| Open Output MIDI Devices -}
-enableOutput : ID -> OutputSignal -> Signal SystemMessage -> Task x MIDIPort
+enableOutput : ID -> Signal (List ChannelMessage) -> Signal SystemMessage -> Task x MIDIPort
 enableOutput =
   Native.WebMidi.enableOutput
 
