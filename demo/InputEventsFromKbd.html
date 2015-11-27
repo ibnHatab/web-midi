@@ -3427,25 +3427,36 @@ Elm.Main.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm),
    $Task = Elm.Task.make(_elm),
    $WebMidi = Elm.WebMidi.make(_elm);
-   var main = A2($Signal.map,
-   function (e) {
-      return $Graphics$Element.show($MidiEvent.decodeChannelEvent(e));
-   },
+   var events = A3($Signal.foldp,
+   F2(function (e,ex) {
+      return A2($List._op["::"],
+      $MidiEvent.decodeChannelEvent(e),
+      ex);
+   }),
+   _L.fromArray([]),
    $WebMidi.channel);
+   var main = A2($Signal.map,
+   function ($) {
+      return $Graphics$Element.show($List.reverse($));
+   },
+   events);
    var keyboard = "Virtual Keyboard";
    var midiAccess = Elm.Native.Task.make(_elm).perform(A2($Task.andThen,
    $WebMidi.requestMIDIAccess($WebMidi.defaultSettings),
    function (midi) {
-      return A2($WebMidi.open,
-      A2($Maybe.withDefault,
-      "none",
+      return A2($Task.andThen,
+      A2($Task.fromMaybe,
+      "No device found",
       A2($WebMidi.selectInstrument,
       keyboard,
       midi.inputs)),
-      $WebMidi.channel);
+      function (id) {
+         return $WebMidi.enableInput(id);
+      });
    }));
    _elm.Main.values = {_op: _op
                       ,keyboard: keyboard
+                      ,events: events
                       ,main: main};
    return _elm.Main.values;
 };Elm.Maybe = Elm.Maybe || {};
@@ -3534,7 +3545,6 @@ Elm.MidiEvent.make = function (_elm) {
    $Basics = Elm.Basics.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
-   $Music = Elm.Music.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $WebMidi = Elm.WebMidi.make(_elm);
@@ -3616,7 +3626,7 @@ Elm.MidiEvent.make = function (_elm) {
               event._0,
               -1);}
          _U.badCase($moduleName,
-         "between lines 243 and 255");
+         "between lines 241 and 253");
       }();
    };
    var channelMessages = {_: {}
@@ -3666,8 +3676,10 @@ Elm.MidiEvent.make = function (_elm) {
                case "PitchBend":
                return A4($WebMidi.ChannelMessage,
                  channelMessages.pitchbend,
-                 (event._1 - 8192) / 128 | 0,
-                 event._1 / 128 | 0,
+                 A2($Basics.rem,
+                 event._1 - 8192,
+                 128),
+                 A2($Basics.rem,event._1,128),
                  event._0);
                case "PolyAfter":
                return A4($WebMidi.ChannelMessage,
@@ -3693,11 +3705,6 @@ Elm.MidiEvent.make = function (_elm) {
    var SequencerSpecific = F2(function (a,
    b) {
       return {ctor: "SequencerSpecific"
-             ,_0: a
-             ,_1: b};
-   });
-   var KeySig = F2(function (a,b) {
-      return {ctor: "KeySig"
              ,_0: a
              ,_1: b};
    });
@@ -3759,8 +3766,8 @@ Elm.MidiEvent.make = function (_elm) {
       return {ctor: "SequenceNum"
              ,_0: a};
    };
-   var Unknown = function (a) {
-      return {ctor: "Unknown"
+   var UnknownSysEv = function (a) {
+      return {ctor: "UnknownSysEv"
              ,_0: a};
    };
    var Reset = function (a) {
@@ -3829,14 +3836,14 @@ Elm.MidiEvent.make = function (_elm) {
          systemMessages.stop) ? Stop(_v37.device) : _U.eq(_v37.event,
          systemMessages.activesensing) ? Activesensing(_v37.device) : _U.eq(_v37.event,
          systemMessages.reset) ? Reset(_v37.device) : _U.eq(_v37.event,
-         systemMessages.unknownsystemmessage) ? Unknown(A2($Basics._op["++"],
+         systemMessages.unknownsystemmessage) ? UnknownSysEv(A2($Basics._op["++"],
          "Event: ",
          A2($Basics._op["++"],
          $Basics.toString(_v37.event),
          A2($Basics._op["++"],
          " on: ",
          _v37.device)))) : _U.badIf($moduleName,
-         "between lines 225 and 238");
+         "between lines 223 and 236");
       }();
    };
    var UnknownChEv = function (a) {
@@ -3926,15 +3933,21 @@ Elm.MidiEvent.make = function (_elm) {
             0) ? A3(NoteOff,
             _v39.channel,
             _v39.data1,
-            _v39.data2 / 127 | 0) : _U.eq(_v39.command,
+            A2($Basics.rem,
+            _v39.data2,
+            127)) : _U.eq(_v39.command,
             channelMessages.noteon) ? A3(NoteOn,
             _v39.channel,
             _v39.data1,
-            _v39.data2 / 127 | 0) : _U.eq(_v39.command,
+            A2($Basics.rem,
+            _v39.data2,
+            127)) : _U.eq(_v39.command,
             channelMessages.keyaftertouch) ? A3(PolyAfter,
             _v39.channel,
             _v39.data1,
-            _v39.data2 / 127 | 0) : _U.eq(_v39.command,
+            A2($Basics.rem,
+            _v39.data2,
+            127)) : _U.eq(_v39.command,
             channelMessages.controlchange) && (_U.cmp(_v39.data1,
             0) > -1 && _U.cmp(_v39.data1,
             119) < 1) ? A3(Control,
@@ -3952,10 +3965,14 @@ Elm.MidiEvent.make = function (_elm) {
             _v39.data1) : _U.eq(_v39.command,
             channelMessages.channelaftertouch) ? A2(MonoAfter,
             _v39.channel,
-            _v39.data1 / 127 | 0) : _U.eq(_v39.command,
+            A2($Basics.rem,
+            _v39.data1,
+            127)) : _U.eq(_v39.command,
             channelMessages.pitchbend) ? A2(PitchBend,
             _v39.channel,
-            (_v39.data2 * 128 + _v39.data1 - 8192) / 8192 | 0) : UnknownChEv($Basics.toString(_v39.command));
+            A2($Basics.rem,
+            _v39.data2 * 128 + _v39.data1 - 8192,
+            8192)) : UnknownChEv($Basics.toString(_v39.command));
             return A2(ChannelEvent,
             _v39.timestamp,
             channelEvent);
@@ -3998,7 +4015,7 @@ Elm.MidiEvent.make = function (_elm) {
                            ,Stop: Stop
                            ,Activesensing: Activesensing
                            ,Reset: Reset
-                           ,Unknown: Unknown
+                           ,UnknownSysEv: UnknownSysEv
                            ,SequenceNum: SequenceNum
                            ,TextEvent: TextEvent
                            ,Copyright: Copyright
@@ -4011,7 +4028,6 @@ Elm.MidiEvent.make = function (_elm) {
                            ,SetTempo: SetTempo
                            ,SMPTEOffset: SMPTEOffset
                            ,TimeSig: TimeSig
-                           ,KeySig: KeySig
                            ,SequencerSpecific: SequencerSpecific
                            ,channelMessages: channelMessages
                            ,decodeChannelEvent: decodeChannelEvent
@@ -12673,6 +12689,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
     var Signal = Elm.Native.Signal.make(localRuntime);
     var Port = Elm.Native.Port.make(localRuntime);
     var Tuple2 = Elm.Native.Utils.make(localRuntime).Tuple2;
+    var List = Elm.List.make(localRuntime);
 
     // global MIDIAccess object
     var midi = null;
@@ -12733,9 +12750,9 @@ Elm.Native.WebMidi.make = function(localRuntime) {
         })};
 
 
-    function open (id, signal) {
+    function enableOutput (id, channelSignal, sytemSignal) {
         return Task.asyncFunction(function(callback) {
-            var dev = midi.inputs.get(id) || midi.outputs.get(id);
+            var dev = midi.outputs.get(id);
 
             if (! dev) {
                 return callback(Task.fail(new Error("No such device found")));
@@ -12743,53 +12760,61 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
             dev.open().then(
                 function(port) {
-                    if(port.type === "output") {
-                        // FIXME: cascading ports on raise with runtime?
-                        var midiOut = Port.outboundSignal("midiOut-" + signal.name,
-                                                          function (v) { return v; },
-                                                          signal);
+                    var midiOut = Port.outboundSignal("midiOut-" + channelSignal.name,
+                                                      function (v) { return v; },
+                                                      channelSignal);
 
-                        var midiOutSignal = localRuntime.ports["midiOut-" + signal.name];
+                    var midiOutSignal = localRuntime.ports["midiOut-" + channelSignal.name];
 
-                        midiOutSignal.subscribe(function(e) {
-                            if ("command" in e) {
-                                var status = (e.command << 4) + (e.channel - 1)
-                                var message = [status, e.data1];
-
-                                if (e.data2 > 0) { message.push(e.data2); }
-
-                                console.log(e)
-                                console.log(message)
-                                port.send(message, e.timestamp + performance.now());
-//                                port.send([ 0x90, 0x45, 0x7f ] );
-                            } if ("event" in e) {
-                                var message = [e.event];
-                                if (e.data > 0) { message.push(e.data); }
-
-                                var dev = midi.outputs.get(e.device);
-                                dev.send(message);
-                            }
-                        });
-                    } else if (port.type === "input") {
-
-                        if (! signal.id == channelIn.id) {
-                            throw new Error(
-                                "Signal Error:\n" +
-                                    "Can not associate " + signal.name + " with MIDI input.\n" +
-                                    "Use WebMidi.channel to open input device."
-                            );
+                    midiOutSignal.subscribe(function(es) {
+                        while (es.ctor !== '[]') {
+                            var e = es._0;
+                            var status = (e.command << 4) + (e.channel - 1)
+                            var message = [status, e.data1];
+                            if (e.data2 >= 0) { message.push(e.data2); }
+                            port.send(message, e.timestamp);
+			    es = es._1;
                         }
+                    });
 
-                        port.onmidimessage = function(event) {
-                            if (event.data[0] < 240) {      // device and channel-specific message
-                                var elmEvent = handleChannelEvent(event);
-                                console.log(event.data)
-                                console.log(elmEvent)
-                                localRuntime.notify(channelIn.id, elmEvent);
-                            } else if (e.data[0] <= 255) {  // system message
-                                var elmEvent = handleSystemEvent(event);
-                                localRuntime.notify(systemIn.id, elmEvent);
-                            }
+                    var sysOut = Port.outboundSignal("sysOut-" + sytemSignal.name,
+                                                     function (v) { return v; },
+                                                     sytemSignal);
+
+                    var sysOutSignal = localRuntime.ports["sysOut-" + sytemSignal.name];
+
+                    sysOutSignal.subscribe(function(e) {
+                        var message = [e.event];
+                        if (e.data >= 0) { message.push(e.data); }
+                        var dev = midi.outputs.get(e.device);
+                        dev.send(message);
+                    });
+
+                return callback(Task.succeed(port))
+            },
+            function(error) {
+                return callback(Task.fail(error))
+            } );
+        });
+    }
+
+    function enableInput (id) {
+        return Task.asyncFunction(function(callback) {
+            var dev = midi.inputs.get(id);
+
+            if (! dev) {
+                return callback(Task.fail(new Error("No such device found")));
+            }
+
+            dev.open().then(
+                function(port) {
+                    port.onmidimessage = function(event) {
+                        if (event.data[0] < 240) {      // device and channel-specific message
+                            var elmEvent = handleChannelEvent(event);
+                            localRuntime.notify(channelIn.id, elmEvent);
+                        } else if (e.data[0] <= 255) {  // system message
+                            var elmEvent = handleSystemEvent(event);
+                            localRuntime.notify(systemIn.id, elmEvent);
                         }
                     }
 
@@ -12800,6 +12825,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                 } );
         });
     }
+
 
     function close (id) {
         return Task.asyncFunction(function(callback) {
@@ -12867,18 +12893,14 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 	return callback(Task.succeed(performance.now()));
     });
 
-
-    // var performance = Signal.input('WebMidi.performance', function () {
-    //     console.error("FIXME")
-    //     performance.now()});
-
     var channelIn = Signal.input('WebMidi.channel', makeChannelMessage(0,0,0,0,0));
 
     var systemIn = Signal.input('WebMidi.system', makeSystemMessage(0,0,0));
 
     return localRuntime.Native.WebMidi.values = {
         requestMIDIAccess: requestMIDIAccess,
-        open: F2(open),
+        enableOutput: F3(enableOutput),
+        enableInput: enableInput,
         close: close,
         channel: channelIn,
         system: systemIn,
@@ -13848,7 +13870,8 @@ Elm.WebMidi.make = function (_elm) {
       }();
    });
    var close = $Native$WebMidi.close;
-   var open = $Native$WebMidi.open;
+   var enableInput = $Native$WebMidi.enableInput;
+   var enableOutput = $Native$WebMidi.enableOutput;
    var requestMIDIAccess = $Native$WebMidi.requestMIDIAccess;
    var defaultSettings = {_: {}
                          ,onChange: $Maybe.Nothing
@@ -13867,6 +13890,10 @@ Elm.WebMidi.make = function (_elm) {
              ,device: b
              ,event: a};
    });
+   var initSystemMsg = A3(SystemMessage,
+   0,
+   "",
+   0);
    var ChannelMessage = F5(function (a,
    b,
    c,
@@ -13879,7 +13906,7 @@ Elm.WebMidi.make = function (_elm) {
              ,data2: c
              ,timestamp: e};
    });
-   var none = A5(ChannelMessage,
+   var initChannelMsg = A5(ChannelMessage,
    0,
    0,
    0,
@@ -13905,12 +13932,14 @@ Elm.WebMidi.make = function (_elm) {
                          ,MIDIPort: MIDIPort
                          ,MIDIAccess: MIDIAccess
                          ,ChannelMessage: ChannelMessage
-                         ,none: none
+                         ,initChannelMsg: initChannelMsg
                          ,SystemMessage: SystemMessage
+                         ,initSystemMsg: initSystemMsg
                          ,Settings: Settings
                          ,defaultSettings: defaultSettings
                          ,requestMIDIAccess: requestMIDIAccess
-                         ,open: open
+                         ,enableOutput: enableOutput
+                         ,enableInput: enableInput
                          ,close: close
                          ,selectInstrument: selectInstrument
                          ,jiffy: jiffy
