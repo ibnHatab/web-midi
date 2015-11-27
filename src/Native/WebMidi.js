@@ -14,6 +14,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
     var Signal = Elm.Native.Signal.make(localRuntime);
     var Port = Elm.Native.Port.make(localRuntime);
     var Tuple2 = Elm.Native.Utils.make(localRuntime).Tuple2;
+    var List = Elm.List.make(localRuntime);
 
     // global MIDIAccess object
     var midi = null;
@@ -75,6 +76,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
 
     function open (id, signal) {
+
         return Task.asyncFunction(function(callback) {
             var dev = midi.inputs.get(id) || midi.outputs.get(id);
 
@@ -85,32 +87,42 @@ Elm.Native.WebMidi.make = function(localRuntime) {
             dev.open().then(
                 function(port) {
                     if(port.type === "output") {
-                        // FIXME: cascading ports on raise with runtime?
                         var midiOut = Port.outboundSignal("midiOut-" + signal.name,
                                                           function (v) { return v; },
                                                           signal);
 
                         var midiOutSignal = localRuntime.ports["midiOut-" + signal.name];
 
-                        midiOutSignal.subscribe(function(e) {
-                            if ("command" in e) {
-                                var status = (e.command << 4) + (e.channel - 1)
-                                var message = [status, e.data1];
+                        if(signal.value.ctor === "::"){
+                            midiOutSignal.subscribe(function(es) {
+                                while (es.ctor !== '[]') {
+                                    var e = es._0;
+                                    var status = (e.command << 4) + (e.channel - 1)
+                                    var message = [status, e.data1];
+                                    if (e.data2 >= 0) { message.push(e.data2); }
+                                    port.send(message, e.timestamp);
+			            es = es._1;
+                                }
+                            });
+                        } else {
+                            midiOutSignal.subscribe(function(e) {
+                                if ("command" in e) {
+                                    var status = (e.command << 4) + (e.channel - 1)
+                                    var message = [status, e.data1];
 
-                                if (e.data2 > 0) { message.push(e.data2); }
+                                    if (e.data2 >= 0) { message.push(e.data2); }
+                                    console.log(message)
+                                    port.send(message, e.timestamp);
+                                } else if ("event" in e) {
+                                    var message = [e.event];
+                                    if (e.data >= 0) { message.push(e.data); }
 
-                                console.log(e)
-                                console.log(message)
-                                port.send(message, e.timestamp + performance.now());
-//                                port.send([ 0x90, 0x45, 0x7f ] );
-                            } if ("event" in e) {
-                                var message = [e.event];
-                                if (e.data > 0) { message.push(e.data); }
+                                    var dev = midi.outputs.get(e.device);
+                                    dev.send(message);
+                                }
+                            });
+                        }
 
-                                var dev = midi.outputs.get(e.device);
-                                dev.send(message);
-                            }
-                        });
                     } else if (port.type === "input") {
 
                         if (! signal.id == channelIn.id) {
@@ -122,13 +134,14 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         }
 
                         port.onmidimessage = function(event) {
+                            console.log(event.data)
                             if (event.data[0] < 240) {      // device and channel-specific message
                                 var elmEvent = handleChannelEvent(event);
-                                console.log(event.data)
                                 console.log(elmEvent)
                                 localRuntime.notify(channelIn.id, elmEvent);
                             } else if (e.data[0] <= 255) {  // system message
                                 var elmEvent = handleSystemEvent(event);
+                                console.log(elmEvent)
                                 localRuntime.notify(systemIn.id, elmEvent);
                             }
                         }
@@ -207,11 +220,6 @@ Elm.Native.WebMidi.make = function(localRuntime) {
     var getCurrentTime = Task.asyncFunction(function(callback) {
 	return callback(Task.succeed(performance.now()));
     });
-
-
-    // var performance = Signal.input('WebMidi.performance', function () {
-    //     console.error("FIXME")
-    //     performance.now()});
 
     var channelIn = Signal.input('WebMidi.channel', makeChannelMessage(0,0,0,0,0));
 

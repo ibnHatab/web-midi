@@ -18,8 +18,6 @@ port midiAccess =
            `andThen` \midi ->
              WebMidi.open (withDefault "none" (selectInstrument keyboard midi.inputs)) WebMidi.channel
 
--- main =
---   Signal.map (show) (Signal.map2 (,) WebMidi.channel WebMidi.system)
+events = Signal.foldp (\e ex -> (decodeChannelEvent e) :: ex) [] WebMidi.channel
 
-
-main = Signal.map (\e -> (decodeChannelEvent e |> show)) WebMidi.channel
+main = Signal.map (show << List.reverse) events

@@ -4,6 +4,22 @@
 
  Web MIDI API on [W3C](http://webaudio.github.io/web-midi-api/)
 
+## Implementation details
+Obtaining Access to MIDI Devices implemented as Task to bind it nicely to promises
+returned by `requestMIDIAccess()`, `open()` and `close()` methods.
+The `onstatechange` of MIDIAccess object fire task provided to `WebMidi.requestMIDIAccess` in
+parameters hash.
+`WebMidi.open` on output device bind it with `Signal.mailbox` of `MidiMessage`.
+All events from input deviced multiplexed on two input `Signal`: `WebMidi.channel`
+and `WebMidi.system`.
+Channel messages coreponds to Note events and have arout 20ms jitter time until become
+sensible to processing delay. System messages can be handled in 1s message loop.
+When opening input device please give it `WebMidi.channel` as `port` parameter.
+
+
+
+
+
 ## Examples
 
 ### [List MIDI Ports](examples/ListMIDIPorts.elm)

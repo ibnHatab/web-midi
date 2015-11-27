@@ -5,6 +5,7 @@ import Graphics.Element exposing (show, Element)
 
 import Task exposing (Task, andThen, succeed)
 import Maybe exposing (withDefault)
+import Time exposing (second)
 
 import WebMidi exposing (..)
 import MidiEvent exposing (..)
@@ -25,10 +26,11 @@ port midiAccess =
   WebMidi.requestMIDIAccess defaultSettings
            `andThen` \midi  -> Task.fromMaybe "No device found" (selectInstrument synch midi.outputs)
            `andThen` \id    -> WebMidi.open id midiOut.signal
-           `andThen` \prt   -> WebMidi.jiffy
+           `andThen` \prt   -> Task.sleep second
+           `andThen` \_     -> WebMidi.jiffy
            `andThen` \start -> List.map (play start) trackOne |> Task.sequence
 
-play : Float -> MEvent -> Task a ()
+play : Float -> MidiEvent -> Task a ()
 play start e =
   case e of
     ChannelEvent t chev ->
@@ -37,25 +39,33 @@ play start e =
       succeed ()
 
 -- SIMPLE TUNE
-cMaj = [c,e',g] |> List.map (\n -> n 4 hn)
+cMaj = [c,e',g] |> List.map (\n -> n 4 qn)
 
 cMajArp = Music.line  cMaj
 cMajChd = Music.chord cMaj
 
 tune : Music
-tune = (Music.repeatM 3 cMajArp) :+: cMajChd
+tune = (Music.repeatM 2 cMajArp) :+: cMajChd
 
 -- MAKE PERFOMANCE
 ctx : Context
-ctx = Context 0 AcousticGrandPiano 3 0
+ctx = Context 0 AcousticGrandPiano 2 0
+
+ctx1: Context
+ctx1= Context 0 TubularBells 2 0
+bells = performM ctx1 (Music.repeatM 4 (g 4 wn))
 
 performance : Performance
-performance = performM ctx tune
+performance =
+  performM ctx tune `merge`
+  bells
 
-trackOne : List MEvent
+midiFile = performance |> performToMidi
+
+trackOne : List MidiEvent
 trackOne =
-  let (MidiFile (Ticks t) tracks) = performance |> performToMidi
-  in List.head tracks |> withDefault []
+  let (MidiFile (Ticks t) tracks) = midiFile
+  in List.concat tracks
 
 main : Element
 main = show trackOne

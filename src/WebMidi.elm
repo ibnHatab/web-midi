@@ -12,7 +12,7 @@ order to enable developers to build powerful MIDI software on top..
 
 # Wiring MIDI I/O devices with runtime signals.
 
-@docs open, close, ID, selectInstrument
+@docs open, openM, close, ID, selectInstrument
 
 # Sends a MIDI message to the specified device(s) at the specified
   timestamp.
@@ -23,7 +23,6 @@ order to enable developers to build powerful MIDI software on top..
 # Utils to synchronously perform music
 
 @docs jiffy, channel, system
-
 
 -}
 
@@ -100,6 +99,12 @@ open : ID -> Signal ChannelMessage -> Task x MIDIPort
 open =
   Native.WebMidi.open
 
+{-| Open MIDI Devices -}
+openM : ID -> Signal (List ChannelMessage) -> Task x MIDIPort
+openM =
+  Native.WebMidi.open
+
+
 {-| Close MIDI Devices -}
 close : ID -> Task x MIDIPort
 close =
@@ -125,7 +130,7 @@ channel =
   Native.WebMidi.channel
 
 {-| system input multiplexer -}
-system : Signal ChannelMessage
+system : Signal SystemMessage
 system =
   Native.WebMidi.system
 

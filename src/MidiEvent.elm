@@ -3,7 +3,7 @@ module MidiEvent (..) where
 
 The online MIDI 1.0 spec. http://www.midi.org/techspecs/midimessages.php
 
-@docs MidiFile, Division, Track, MEvent, ElapsedTime, ChannelEvent, SystemEvent
+@docs MidiFile, Division, Track, MidiEvent, ElapsedTime, ChannelEvent, SystemEvent
 
 @docs MPitch, Velocity, ControlNum, PBRange, ProgNum, Pressure, MidiChannel, ControlVal
 
@@ -26,11 +26,11 @@ type MidiFile = MidiFile Division (List Track)
 type Division = Ticks HighResTimeStamp
 
 {-| Track -}
-type alias Track  = List MEvent
+type alias Track  = List MidiEvent
 
 
 {-| MIDI Event with timestamp -}
-type MEvent = ChannelEvent ElapsedTime ChannelEvent
+type MidiEvent = ChannelEvent ElapsedTime ChannelEvent
             | SystemEvent ElapsedTime SystemEvent
             | MetaEvent ElapsedTime MetaEvent
 
@@ -141,15 +141,15 @@ channelMessages = { noteoff = 8            -- 0x8
 
 {-| Decode channel event and event time from received channel message
 -}
-decodeChannelEvent : ChannelMessage -> MEvent
+decodeChannelEvent : ChannelMessage -> MidiEvent
 decodeChannelEvent { command, data1, data2, timestamp, channel } =
   let channelEvent =
         if | command == channelMessages.noteoff || (command == channelMessages.noteon && data2 == 0)
-             -> NoteOff channel data1 (data2 // 127)
+             -> NoteOff channel data1 (data2 `rem` 127)
            | command == channelMessages.noteon
-             -> NoteOn channel data1 (data2 // 127)
+             -> NoteOn channel data1 (data2 `rem` 127)
            | command == channelMessages.keyaftertouch
-             -> PolyAfter channel data1 (data2 // 127)
+             -> PolyAfter channel data1 (data2 `rem` 127)
            | command == channelMessages.controlchange && data1 >= 0 && data1 <= 119
              -> Control channel data1 data2
            | command == channelMessages.channelmode && data1 >= 120 && data1 <= 127
@@ -157,9 +157,9 @@ decodeChannelEvent { command, data1, data2, timestamp, channel } =
            | command == channelMessages.programchange
              -> ProgChange channel data1
            | command == channelMessages.channelaftertouch
-             -> MonoAfter channel (data1 // 127)
+             -> MonoAfter channel (data1 `rem` 127)
            | command == channelMessages.pitchbend
-             -> PitchBend channel (((data2 * 128) + data1 - 8192) // 8192)
+             -> PitchBend channel (((data2 * 128) + data1 - 8192) `rem` 8192)
            | otherwise ->
              UnknownChEv (toString command)
   in ChannelEvent timestamp channelEvent
@@ -181,7 +181,7 @@ encodeChannelEvent timestamp event  =
         Control ch num val ->
           ChannelMessage channelMessages.controlchange num val ch
         PitchBend ch range               ->
-          ChannelMessage channelMessages.pitchbend ((range - 8192) // 128) (range // 128) ch
+          ChannelMessage channelMessages.pitchbend ((range - 8192) `rem` 128) (range `rem` 128) ch
         MonoAfter ch pressure              ->
           ChannelMessage channelMessages.channelaftertouch pressure -1 ch
         Mode ch num val ->

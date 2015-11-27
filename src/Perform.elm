@@ -5,7 +5,7 @@ Performance, which is an abstract notion of what the music means.
 
 @docs Performance, Event, DurT, Context, Key
 
-@docs metro, performM, merge, perf, toDelta, splitByInst, performToMidi, performToMEvs, mkMEvents,insertMEvent, division, toDelta
+@docs metro, performM, merge, perf, toDelta, splitByInst, performToMidi, performToMEvs, mkMidiEvents,insertMidiEvent, division, toDelta
 
 -}
 import Music exposing (..)
@@ -118,36 +118,36 @@ splitByInst p =
           in if i == Percussion
              then (9, 0, pf1) :: aux n pf2
              else (n, instrumentToInt i, pf1) :: aux n' pf2
-  in aux 0 p
+  in aux 1 p
 
 {-|
-converts a Performance into a stream of MEvents (i.e., a Track).
+converts a Performance into a stream of MidiEvents (i.e., a Track).
 -}
 performToMEvs : (MidiChannel,ProgNum,Performance) -> Track
 performToMEvs (ch, pn, perf) =
   let tempo = 500000
-      setupInst   = ChannelEvent 0 (ProgChange ch pn)
-      setTempo    = MetaEvent 0 (SetTempo tempo)
+      setupInst = ChannelEvent 0 (ProgChange ch pn)
+      ctrl      = ChannelEvent 0 (Control ch 0 0)
+      setTempo  = MetaEvent 0 (SetTempo tempo)
       loop p = case p of
                  [] -> []
                  e::es ->
-                   let (mev1,mev2) = mkMEvents ch e
-                   in  mev1 :: insertMEvent mev2 (loop es)
-  in  -- setupInst ::
-      setTempo :: loop perf
+                   let (mev1,mev2) = mkMidiEvents ch e
+                   in  mev1 :: insertMidiEvent mev2 (loop es)
+  in  setTempo :: ctrl :: setupInst :: loop perf
 
 {-| Meke Note delimeters -}
-mkMEvents : MidiChannel -> Event -> (MEvent,MEvent)
-mkMEvents mChan { eTime, ePitch, eDur }
-  = (ChannelEvent (toDelta eTime) (NoteOn (mChan+1) ePitch 50),
-     ChannelEvent (toDelta (eTime+eDur)) (NoteOff (mChan+1) ePitch 50))
+mkMidiEvents : MidiChannel -> Event -> (MidiEvent,MidiEvent)
+mkMidiEvents mChan { eTime, ePitch, eDur }
+  = (ChannelEvent (toDelta eTime) (NoteOn mChan ePitch 50),
+     ChannelEvent (toDelta (eTime+eDur)) (NoteOff mChan ePitch 50))
 
 {-| Insert event with respect of timestamp -}
-insertMEvent : MEvent -> List MEvent -> List MEvent
-insertMEvent (ChannelEvent t1 _ as ev)  evs =
+insertMidiEvent : MidiEvent -> List MidiEvent -> List MidiEvent
+insertMidiEvent (ChannelEvent t1 _ as ev)  evs =
   case evs of
     [] ->
       [ev]
     (ChannelEvent t2 _ as ev2) :: evs' ->
                                if t1 <= t2 then ev :: evs
-                               else ev2 :: insertMEvent ev evs'
+                               else ev2 :: insertMidiEvent ev evs'
