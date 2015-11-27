@@ -9,8 +9,6 @@
     ],
     "exposed-modules": [
         "WebMidi",
-        "Music",
-        "Perform",
         "MidiEvent"
     ],
     "native-modules": true,

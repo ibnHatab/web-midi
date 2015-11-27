@@ -111,7 +111,6 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                                     var message = [status, e.data1];
 
                                     if (e.data2 >= 0) { message.push(e.data2); }
-                                    console.log(message)
                                     port.send(message, e.timestamp);
                                 } else if ("event" in e) {
                                     var message = [e.event];
@@ -134,14 +133,11 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         }
 
                         port.onmidimessage = function(event) {
-                            console.log(event.data)
                             if (event.data[0] < 240) {      // device and channel-specific message
                                 var elmEvent = handleChannelEvent(event);
-                                console.log(elmEvent)
                                 localRuntime.notify(channelIn.id, elmEvent);
                             } else if (e.data[0] <= 255) {  // system message
                                 var elmEvent = handleSystemEvent(event);
-                                console.log(elmEvent)
                                 localRuntime.notify(systemIn.id, elmEvent);
                             }
                         }

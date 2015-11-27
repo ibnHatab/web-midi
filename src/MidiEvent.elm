@@ -69,7 +69,7 @@ type SystemEvent = Sysex ID                    -- sysex
                  | Stop ID                     -- stop
                  | Activesensing ID            -- activesensing
                  | Reset ID                    -- reset
-                 | Unknown String
+                 | UnknownSysEv String
 
 {-|
 Meta Events
@@ -235,7 +235,7 @@ decodeSystemEvent { event, device, data } =
      | event == systemMessages.activesensing ->  Activesensing device
      | event == systemMessages.reset         ->  Reset device
      | event == systemMessages.unknownsystemmessage
-       ->  Unknown ("Event: " ++ toString event ++ " on: " ++ device)
+       ->  UnknownSysEv ("Event: " ++ toString event ++ " on: " ++ device)
 
 {-| Encode system messages -}
 encodeSystemEvent : SystemEvent -> SystemMessage
