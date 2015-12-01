@@ -36,12 +36,8 @@ port midiAccess =
            `andThen` \start -> List.map (play start) trackOne |> Task.sequence
 
 play : Float -> MidiEvent -> Task a ()
-play start e =
-  case e of
-    ChannelEvent t chev ->
-      Signal.send midiOut.address [encodeChannelEvent (t+start) chev]
-    otherwise ->
-      succeed ()
+play start (t, e) =
+  Signal.send midiOut.address [encodeChannelEvent (t + start, e)]
 
 -- SIMPLE TUNE
 cMaj = [c,e',g] |> List.map (\n -> n 4 qn)

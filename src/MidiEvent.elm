@@ -27,11 +27,8 @@ type Division = Ticks HighResTimeStamp
 {-| Track -}
 type alias Track  = List MidiEvent
 
-
 {-| MIDI Event with timestamp -}
-type MidiEvent = ChannelEvent ElapsedTime ChannelEvent
-               | SystemEvent ElapsedTime SystemEvent
-               | MetaEvent ElapsedTime MetaEvent
+type alias MidiEvent = (ElapsedTime, ChannelEvent)
 
 {-| MIDI ElapsedTime -}
 type alias ElapsedTime  = HighResTimeStamp
@@ -168,11 +165,11 @@ decodeChannelEvent { command, data1, data2, timestamp, channel } =
         then PitchBend channel (((data2 * 128) + data1 - 8192) `rem` 8192)
 
         else UnknownChEv (toString command)
-  in ChannelEvent timestamp channelEvent
+  in (timestamp, channelEvent)
 
 {-| Encode MIDI Event into Channel event -}
-encodeChannelEvent :  ElapsedTime -> ChannelEvent-> ChannelMessage
-encodeChannelEvent timestamp event  =
+encodeChannelEvent :  MidiEvent-> ChannelMessage
+encodeChannelEvent (timestamp, event)  =
   let
     msgAt =
       case event of

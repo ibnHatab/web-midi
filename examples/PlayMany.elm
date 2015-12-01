@@ -29,11 +29,11 @@ port midiAccess =
            `andThen` \id   -> WebMidi.enableOutput id midiOut.signal sysOut.signal
            `andThen` \p    -> Signal.send midiOut.address bell
 
-bell = [ChannelEvent 1 (Control 1 0 0)     -- Control mode
-       ,ChannelEvent 1 (ProgChange 1 14)   -- Set instrument
-       ,ChannelEvent 1 (NoteOn 1 48 50)    -- Play C note
-       ,ChannelEvent 1 (NoteOff 1 48 50)]  -- Stop note
-     |> List.map (\(ChannelEvent t e) -> encodeChannelEvent t e)
+bell = [ (1, (Control 1 0 0))     -- Control mode
+       , (1, (ProgChange 1 14))   -- Set instrument
+       , (1, (NoteOn 1 48 50))    -- Play C note
+       , (1, (NoteOff 1 48 50))]  -- Stop note
+     |> List.map encodeChannelEvent
 
 main : Html
 main = text "Play bell"

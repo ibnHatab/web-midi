@@ -25,9 +25,10 @@ order to enable developers to build powerful MIDI software on top..
 @docs jiffy, channel, system
 
 -}
-
+import Native.WebMidi
 import Dict exposing (Dict, empty)
 import Task exposing (Task, andThen, succeed)
+
 
 
 {-| This interface represents a MIDI input or output port.  -}

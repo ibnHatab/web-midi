@@ -125,22 +125,20 @@ converts a Performance into a stream of MidiEvents (i.e., a Track).
 -}
 performToMEvs : (MidiChannel,ProgNum,Performance) -> Track
 performToMEvs (ch, pn, perf) =
-  let tempo = 500000
-      setupInst = ChannelEvent 0 (ProgChange ch pn)
-      ctrl      = ChannelEvent 0 (Control ch 0 0)
-      setTempo  = MetaEvent 0 (SetTempo tempo)
+  let setupInst = (0, (ProgChange ch pn))
+      ctrl      = (0, (Control ch 0 0))
       loop p = case p of
                  [] -> []
                  e::es ->
                    let (mev1,mev2) = mkMidiEvents ch e
                    in  mev1 :: insertMidiEvent mev2 (loop es)
-  in  setTempo :: ctrl :: setupInst :: loop perf
+  in  ctrl :: setupInst :: loop perf
 
 {-| Meke Note delimeters -}
 mkMidiEvents : MidiChannel -> Event -> (MidiEvent,MidiEvent)
 mkMidiEvents mChan { eTime, ePitch, eDur }
-  = (ChannelEvent (toDelta eTime) (NoteOn mChan ePitch 50),
-     ChannelEvent (toDelta (eTime+eDur)) (NoteOff mChan ePitch 50))
+  = ( ((toDelta eTime), (NoteOn mChan ePitch 50)),
+      ((toDelta (eTime+eDur)), (NoteOff mChan ePitch 50)))
 
 {-| Insert event with respect of timestamp -}
 insertMidiEvent : MidiEvent -> List MidiEvent -> List MidiEvent
@@ -150,15 +148,6 @@ insertMidiEvent ev evs =
       [ev]
     ev2 :: evs' ->
         case (ev, ev2) of
-          ((ChannelEvent t1 _)
-          , (ChannelEvent t2 _ ))->
-        -- let t1 = .ElapsedTime ev
-        --     t2 = .ElapsedTime ev2
-        -- in
-          if t1 <= t2 then ev :: evs
+          ((t1, _), (t2, _))->
+            if t1 <= t2 then ev :: evs
             else ev2 :: insertMidiEvent ev evs'
-
-    --     SystemEvent _ _ :: evs' -> insertMidiEvent ev evs'
-    --     MetaEvent _ _ :: evs' -> insertMidiEvent ev evs'
-    -- SystemEvent _ _     -> insertMidiEvent ev evs
-    -- MetaEvent _ _       -> insertMidiEvent ev evs
