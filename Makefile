@@ -8,7 +8,7 @@ ELM_IO = elm-stuff/packages/maxsnew/IO/1.0.1/elm-io.sh
 TESTS=$(wildcard tests/*.elm)
 TESTS_JS=$(patsubst %.elm,%.elm.test.js,$(TESTS))
 
-TARGETS=$(wildcard examples/*.elm)
+TARGETS=$(wildcard examples/*.elm) $(wildcard examples/apps/*.elm)
 TARGETS_JS=$(patsubst %.elm,%.js,$(TARGETS))
 
 DEMO =  demo/InputEventsFromKbd.html \

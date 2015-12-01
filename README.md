@@ -20,8 +20,9 @@ signals - `WebMidi.channel` and `WebMidi.system`.
 `WebMidi.enableOutput` handle output device and bind it with
 `ChannelMessage` and `SystemMessage` mailboxes .
 
-Channel messages coreponds to Note events and have arout 20ms jitter time until become
-sensible to processing delay. System messages can be handled in 1s message loop.
+Channel messages coreponds to Note events and have arout 20ms jitter
+time until become sensible to processing delay. System messages can be
+handled in 1s message loop.
 
 There is possibility to butch MIDI events out to the system by
 declaring `mailbox` as List of ChannelMessages. Then you can select
@@ -30,12 +31,15 @@ all events for next tick and send them in one burst.
 
 ## Examples
 
+Midi API examples mixed up with code from `The Haskell School of
+Expression` chapters on computer music.
+
 ### [List MIDI Ports](examples/ListMIDIPorts.elm)
    Demonstrate how to request access to MIDI system.
 
 ```elm
   WebMidi.requestMIDIAccess defaultSettings
-  ```
+```
 
 [DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/demo/ListMIDIPorts.html)
 
