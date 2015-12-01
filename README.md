@@ -4,6 +4,8 @@
 
  Web MIDI API on [W3C](http://webaudio.github.io/web-midi-api/)
 
+Don't look back, the lemmings are gaining on you.
+
 ## Implementation details
 
 Obtaining Access to MIDI Devices implemented as Task to bind it nicely
