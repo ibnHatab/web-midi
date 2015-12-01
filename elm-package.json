@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
     "summary": "Web MIDI API for Elm",
-    "repository": "https://github.com/ibnHatab/WebMidi.git",
+    "repository": "https://github.com/ibnHatab/web-midi.git",
     "license": "BSD3",
     "source-directories": [
         "src",
