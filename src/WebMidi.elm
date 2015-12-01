@@ -26,7 +26,6 @@ order to enable developers to build powerful MIDI software on top..
 
 -}
 
-import Native.WebMidi
 import Dict exposing (Dict, empty)
 import Task exposing (Task, andThen, succeed)
 

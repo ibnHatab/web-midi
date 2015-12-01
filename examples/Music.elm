@@ -31,8 +31,6 @@ module Music where
 
 -}
 
-import Array exposing (Array, get)
-
 {-| Define how high or low a note is
 -}
 type alias Pitch = (PitchClass, Octave)
@@ -86,7 +84,7 @@ type Music = Note Pitch Dur
 
 {-| Adjust duration ?? -}
 (=:=) : Dur -> Dur -> Music -> Music
-old =:= new = Tempo (new `divD` old)
+(=:=) old  new = Tempo (new `divD` old)
 
 {-| General MIDI Standard instruments -}
 type IName
@@ -171,18 +169,22 @@ absPitch : Pitch -> AbsPitch
 -- absPitch (pc,oct) = 12*(oct + 4) + pcToInt pc
 absPitch (pc,oct) = 12*oct + pcToInt pc
 
-{-| Pitches LUT -}
-pitches : Array PitchClass
-pitches = Array.fromList [C,Cs,D,Ds,E,F,Fs,G,Gs,A,As,B]
-
-infixl 9 !!
-{-| Array indexer -}
-(!!) : Array a -> Int -> a
-(!!) array i = case Array.get i array of Just a -> a
-
 {-| Pitch of AbsPitch -}
 pitch : AbsPitch -> Pitch
-pitch ap = ( pitches !! (ap % 12)
+pitch ap = ( case (ap % 12) of
+               0 -> C
+               1 -> Cs
+               2 -> D
+               3 -> Ds
+               4 -> E
+               5 -> F
+               6 -> Fs
+               7 -> G
+               8 -> Gs
+               9 -> A
+               10 -> As
+               11 -> B
+               otherwise -> Cf
            , floor ((toFloat ap) / 12) )
 
 {-| Pitches Dict -}

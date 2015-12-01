@@ -30,8 +30,8 @@ type alias Track  = List MidiEvent
 
 {-| MIDI Event with timestamp -}
 type MidiEvent = ChannelEvent ElapsedTime ChannelEvent
-            | SystemEvent ElapsedTime SystemEvent
-            | MetaEvent ElapsedTime MetaEvent
+               | SystemEvent ElapsedTime SystemEvent
+               | MetaEvent ElapsedTime MetaEvent
 
 {-| MIDI ElapsedTime -}
 type alias ElapsedTime  = HighResTimeStamp
@@ -142,24 +142,32 @@ channelMessages = { noteoff = 8            -- 0x8
 decodeChannelEvent : ChannelMessage -> MidiEvent
 decodeChannelEvent { command, data1, data2, timestamp, channel } =
   let channelEvent =
-        if | command == channelMessages.noteoff || (command == channelMessages.noteon && data2 == 0)
-             -> NoteOff channel data1 (data2 `rem` 127)
-           | command == channelMessages.noteon
-             -> NoteOn channel data1 (data2 `rem` 127)
-           | command == channelMessages.keyaftertouch
-             -> PolyAfter channel data1 (data2 `rem` 127)
-           | command == channelMessages.controlchange && data1 >= 0 && data1 <= 119
-             -> Control channel data1 data2
-           | command == channelMessages.channelmode && data1 >= 120 && data1 <= 127
-             -> Mode channel data1 data2
-           | command == channelMessages.programchange
-             -> ProgChange channel data1
-           | command == channelMessages.channelaftertouch
-             -> MonoAfter channel (data1 `rem` 127)
-           | command == channelMessages.pitchbend
-             -> PitchBend channel (((data2 * 128) + data1 - 8192) `rem` 8192)
-           | otherwise ->
-             UnknownChEv (toString command)
+        if command == channelMessages.noteoff
+             || (command == channelMessages.noteon && data2 == 0)
+        then NoteOff channel data1 (data2 `rem` 127)
+
+        else if command == channelMessages.noteon
+        then NoteOn channel data1 (data2 `rem` 127)
+
+        else if command == channelMessages.keyaftertouch
+        then PolyAfter channel data1 (data2 `rem` 127)
+
+        else if command == channelMessages.controlchange && data1 >= 0 && data1 <= 119
+        then Control channel data1 data2
+
+        else if command == channelMessages.channelmode && data1 >= 120 && data1 <= 127
+        then Mode channel data1 data2
+
+        else if command == channelMessages.programchange
+        then ProgChange channel data1
+
+        else if command == channelMessages.channelaftertouch
+        then MonoAfter channel (data1 `rem` 127)
+
+        else if command == channelMessages.pitchbend
+        then PitchBend channel (((data2 * 128) + data1 - 8192) `rem` 8192)
+
+        else UnknownChEv (toString command)
   in ChannelEvent timestamp channelEvent
 
 {-| Encode MIDI Event into Channel event -}
@@ -202,38 +210,37 @@ systemMessages : { activesensing : Int
                  , tuningrequest : Int
                  , unknownsystemmessage : Int
                  }
-systemMessages ={ sysex = 240              -- 0xF0
-                , timecode = 241           -- 0xF1
-                , songposition = 242       -- 0xF2
-                , songselect = 243         -- 0xF3
-                , tuningrequest = 246      -- 0xF6
-                , sysexend = 247           -- 0xF7 (never actually received - simply ends a sysex)
-                , clock = 248              -- 0xF8
-                , start = 250              -- 0xFA
-                , continue = 251           -- 0xFB
-                , stop = 252               -- 0xFC
-                , activesensing = 254      -- 0xFE
-                , reset = 255              -- 0xFF
-                , unknownsystemmessage = -1
-                }
+systemMessages = { sysex = 240              -- 0xF0
+                 , timecode = 241           -- 0xF1
+                 , songposition = 242       -- 0xF2
+                 , songselect = 243         -- 0xF3
+                 , tuningrequest = 246      -- 0xF6
+                 , sysexend = 247           -- 0xF7 (never actually received - simply ends a sysex)
+                 , clock = 248              -- 0xF8
+                 , start = 250              -- 0xFA
+                 , continue = 251           -- 0xFB
+                 , stop = 252               -- 0xFC
+                 , activesensing = 254      -- 0xFE
+                 , reset = 255              -- 0xFF
+                 , unknownsystemmessage = -1
+                 }
 
 {-| Decode system event from system message -}
 decodeSystemEvent : SystemMessage -> SystemEvent
 decodeSystemEvent { event, device, data } =
-  if | event == systemMessages.sysex         ->  Sysex device
-     | event == systemMessages.timecode      ->  Timecode device
-     | event == systemMessages.songposition  ->  Songposition device data
-     | event == systemMessages.songselect    ->  Songselect device data
-     | event == systemMessages.tuningrequest ->  Tuningrequest device
-     | event == systemMessages.sysexend      ->  Sysexend device
-     | event == systemMessages.clock         ->  Clock device
-     | event == systemMessages.start         ->  Start device
-     | event == systemMessages.continue      ->  Continue device
-     | event == systemMessages.stop          ->  Stop device
-     | event == systemMessages.activesensing ->  Activesensing device
-     | event == systemMessages.reset         ->  Reset device
-     | event == systemMessages.unknownsystemmessage
-       ->  UnknownSysEv ("Event: " ++ toString event ++ " on: " ++ device)
+  if event == systemMessages.sysex              then Sysex device
+  else if event == systemMessages.timecode      then  Timecode device
+  else if event == systemMessages.songposition  then  Songposition device data
+  else if event == systemMessages.songselect    then  Songselect device data
+  else if event == systemMessages.tuningrequest then  Tuningrequest device
+  else if event == systemMessages.sysexend      then  Sysexend device
+  else if event == systemMessages.clock         then  Clock device
+  else if event == systemMessages.start         then  Start device
+  else if event == systemMessages.continue      then  Continue device
+  else if event == systemMessages.stop          then  Stop device
+  else if event == systemMessages.activesensing then  Activesensing device
+  else if event == systemMessages.reset         then  Reset device
+  else UnknownSysEv ("Event: " ++ toString event ++ " on: " ++ device)
 
 {-| Encode system messages -}
 encodeSystemEvent : SystemEvent -> SystemMessage
@@ -251,3 +258,4 @@ encodeSystemEvent event =
     Stop dev             -> SystemMessage systemMessages.stop dev -1
     Activesensing dev    -> SystemMessage systemMessages.activesensing dev -1
     Reset dev            -> SystemMessage systemMessages.reset dev -1
+    otherwise            -> SystemMessage systemMessages.unknownsystemmessage "" -1

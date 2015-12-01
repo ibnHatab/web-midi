@@ -64,14 +64,14 @@ perf ({ cTime, cInst, cDur, cKey } as ctx) m =
                   in ([ Event cTime cInst (transpose p cKey cInst) d' ], d')
       Rest d ->  ([], toFloatD d * cDur)
       Sequence m1 m2 -> let (pf1,d1) = perf ctx m1
-                            (pf2,d2) = perf {ctx | cTime <- cTime + d1} m2
+                            (pf2,d2) = perf {ctx | cTime = cTime + d1} m2
                         in (pf1++pf2, d1+d2)
       Parallel m1 m2 -> let (pf1,d1) = perf ctx m1
                             (pf2,d2) = perf ctx m2
                         in (merge pf1 pf2, max d1 d2)
-      Tempo  a  m -> perf {ctx | cDur <- cDur / toFloatD a} m
-      Trans  p  m -> perf {ctx | cKey <- cKey + p} m
-      Instr  nm m -> perf {ctx | cInst <- nm} m
+      Tempo  a  m -> perf {ctx | cDur = cDur / toFloatD a} m
+      Trans  p  m -> perf {ctx | cKey = cKey + p} m
+      Instr  nm m -> perf {ctx | cInst = nm} m
 
 {-| Merging two performances over time -}
 merge : Performance -> Performance -> Performance
@@ -144,10 +144,21 @@ mkMidiEvents mChan { eTime, ePitch, eDur }
 
 {-| Insert event with respect of timestamp -}
 insertMidiEvent : MidiEvent -> List MidiEvent -> List MidiEvent
-insertMidiEvent (ChannelEvent t1 _ as ev)  evs =
+insertMidiEvent ev evs =
   case evs of
     [] ->
       [ev]
-    (ChannelEvent t2 _ as ev2) :: evs' ->
-                               if t1 <= t2 then ev :: evs
-                               else ev2 :: insertMidiEvent ev evs'
+    ev2 :: evs' ->
+        case (ev, ev2) of
+          ((ChannelEvent t1 _)
+          , (ChannelEvent t2 _ ))->
+        -- let t1 = .ElapsedTime ev
+        --     t2 = .ElapsedTime ev2
+        -- in
+          if t1 <= t2 then ev :: evs
+            else ev2 :: insertMidiEvent ev evs'
+
+    --     SystemEvent _ _ :: evs' -> insertMidiEvent ev evs'
+    --     MetaEvent _ _ :: evs' -> insertMidiEvent ev evs'
+    -- SystemEvent _ _     -> insertMidiEvent ev evs
+    -- MetaEvent _ _       -> insertMidiEvent ev evs
