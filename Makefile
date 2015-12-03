@@ -18,6 +18,7 @@ DEMO =  demo/InputEventsFromKbd.html \
 
 
 all: compile
+	~/bin/chrome-reload.sh "Main"
 
 compile: $(TARGETS_JS)
 	$(ELM_COMPILE)

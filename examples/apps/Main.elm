@@ -3,6 +3,7 @@ import Effects exposing (Effects, map, batch, Never)
 import Html exposing (..)
 import Html.Attributes exposing (style)
 import StartApp
+import Task
 
 import Piano exposing (Action, view, init)
 import MidiConnector exposing (Action, view, init)
@@ -34,17 +35,28 @@ init =
 -- UPDATE
 
 type Action
-  = Create
-  | Connector MidiConnector.Action
+  = Connector MidiConnector.Action
   | Piano Piano.Action
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
-  case message |> Debug.log "m_act" of
-    Create ->
-      (model, Effects.none)
-    otherwise ->
-      (model, Effects.none)
+  case message |> Debug.log "main_act" of
+    Connector act ->
+      let
+        (conn, fx) = MidiConnector.update act model.midiConnector
+      in
+        ( {model | midiConnector = conn}
+        , Effects.map Connector fx
+        )
+    Piano act ->
+      let
+        (piano, fx) = Piano.update act model.piano
+      in
+        ( {model | piano = piano}
+        , Effects.map Piano fx
+        )
+    -- otherwise ->
+    --   (model, Effects.none)
 
 
 inputs : List (Signal Action)
@@ -76,3 +88,8 @@ app =
 
 main =
   app.html
+
+
+port tasks : Signal (Task.Task Never ())
+port tasks =
+  app.tasks

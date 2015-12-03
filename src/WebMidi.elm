@@ -28,18 +28,17 @@ order to enable developers to build powerful MIDI software on top..
 import Native.WebMidi
 import Dict exposing (Dict, empty)
 import Task exposing (Task, andThen, succeed)
-
-
-
-{-| This interface represents a MIDI input or output port.  -}
-type alias MIDIPort = {
-    name         : String
-  , manufacturer : String
-  , version      : String
-  }
+import Regex exposing (contains, regex)
 
 {-| Device ID -}
 type alias ID = String
+
+{-| This interface represents a MIDI input or output port.  -}
+type alias MIDIPort = {
+    name         : ID
+  , manufacturer : String
+  , version      : String
+  }
 
 {-| This interface provides the methods to list MIDI input and output
 devices, and obtain access to an individual device.  -}
@@ -118,7 +117,7 @@ close =
 selectInstrument : String -> Dict ID MIDIPort -> Maybe ID
 selectInstrument name instruments =
   let ids = Dict.foldr (\key val keyList ->
-                        if val.name == name then key :: keyList
+                        if contains (regex name) val.name then key :: keyList
                         else keyList) [] instruments
   in List.head ids
 

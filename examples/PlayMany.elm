@@ -8,7 +8,7 @@ import WebMidi exposing (..)
 import MidiEvent exposing (..)
 import Music exposing (..)
 
-synch = "Synth input port (16600:0)"
+synch = "Synth input port"
 
 midiOut : Signal.Mailbox (List ChannelMessage)
 midiOut =
