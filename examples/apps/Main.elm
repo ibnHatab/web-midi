@@ -33,13 +33,10 @@ init =
                ]
     )
 
-
 -- UPDATE
-
 type Action
   = Connector MidiConnector.Action
   | Piano Piano.Action
---  | Loopback String
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
@@ -80,10 +77,11 @@ port sysOutPort = sysOut.signal
 inputs : List (Signal Action)
 inputs = [events]
 
+events : Signal Action
 events = Signal.map (Connector << MidiConnector.OnChange) WebMidi.onChange
 
 -- VIEW
-
+(=>) : a -> b -> ( a, b )
 (=>) = (,)
 
 
@@ -95,7 +93,7 @@ view address model =
       ]
 
 -- APP
-
+app : StartApp.App Model
 app =
   StartApp.start
              { init = init
@@ -104,6 +102,7 @@ app =
              , inputs = inputs
              }
 
+main : Signal Html
 main =
   app.html
 
