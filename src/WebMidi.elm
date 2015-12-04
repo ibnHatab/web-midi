@@ -35,7 +35,7 @@ type alias ID = String
 
 {-| This interface represents a MIDI input or output port.  -}
 type alias MIDIPort = {
-    name         : ID
+    name         : String
   , manufacturer : String
   , version      : String
   }
@@ -98,18 +98,18 @@ requestMIDIAccess =
   Native.WebMidi.requestMIDIAccess
 
 {-| Open Output MIDI Devices -}
-enableOutput : ID -> Signal (List ChannelMessage) -> Signal SystemMessage -> Task x MIDIPort
+enableOutput : ID -> Signal (List ChannelMessage) -> Signal SystemMessage -> Task x ID
 enableOutput =
   Native.WebMidi.enableOutput
 
 {-| Open Input MIDI Devices -}
-enableInput : ID -> Task x MIDIPort
+enableInput : ID -> Task x ID
 enableInput =
   Native.WebMidi.enableInput
 
 
 {-| Close MIDI Devices -}
-close : ID -> Task x MIDIPort
+close : ID -> Task x ID
 close =
   Native.WebMidi.close
 

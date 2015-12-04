@@ -5,6 +5,8 @@ import Html.Attributes exposing (style)
 import StartApp
 import Task
 
+import WebMidi exposing (..)
+
 import Piano exposing (Action, view, init)
 import MidiConnector exposing (Action, view, init)
 
@@ -21,7 +23,7 @@ type alias Model =
 init : (Model, Effects Action)
 init =
   let
-    (connector, connectorFx) = MidiConnector.init
+    (connector, connectorFx) = MidiConnector.init midiOut.signal sysOut.signal loopback.address
     (piano, pianoFx) = Piano.init
   in
     ( Model connector piano
@@ -37,10 +39,13 @@ init =
 type Action
   = Connector MidiConnector.Action
   | Piano Piano.Action
+  | Loopback String
+  | None
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
-  case message |> Debug.log "main_act" of
+  case message |> Debug.log "main_act"
+  of
     Connector act ->
       let
         (conn, fx) = MidiConnector.update act model.midiConnector
@@ -55,9 +60,13 @@ update message model =
         ( {model | piano = piano}
         , Effects.map Piano fx
         )
-    -- otherwise ->
-    --   (model, Effects.none)
 
+    Loopback it ->
+      ({ model | midiConnector = fst (MidiConnector.update (MidiConnector.OnChange it) model.midiConnector)},
+      Effects.none)
+
+    None ->
+      (model, Effects.none)
 
 inputs : List (Signal Action)
 inputs = []
@@ -74,8 +83,6 @@ view address model =
       , Piano.view (Signal.forwardTo address Piano) model.piano
       ]
 
-
-
 -- APP
 
 app =
@@ -83,7 +90,7 @@ app =
              { init = init
              , update = update
              , view = view
-             , inputs = []
+             , inputs = [events]
              }
 
 main =
@@ -93,3 +100,25 @@ main =
 port tasks : Signal (Task.Task Never ())
 port tasks =
   app.tasks
+
+-- SIGNALS
+
+midiOut : Signal.Mailbox (List ChannelMessage)
+midiOut =
+  Signal.mailbox [initChannelMsg]
+
+sysOut : Signal.Mailbox SystemMessage
+sysOut =
+  Signal.mailbox initSystemMsg
+
+port midiOutPort : Signal (List ChannelMessage)
+port midiOutPort = midiOut.signal
+
+port sysOutPort : Signal SystemMessage
+port sysOutPort = sysOut.signal
+
+loopback : Signal.Mailbox String
+loopback =
+  Signal.mailbox ""
+
+events = Signal.map (\it -> Loopback (it |> Debug.log "it")) loopback.signal

@@ -59,6 +59,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 		if (settings.onChange.ctor === 'Just')
 		{
                     midiAccess.onstatechange = function(event) {
+                        console.log(event)
 			var task = settings.onChange._0(event.port.id);
 			Task.spawn(task);
 		    };
@@ -133,20 +134,10 @@ Elm.Native.WebMidi.make = function(localRuntime) {
 
             dev.open().then(
                 function(port) {
-                    port.onmidimessage = function(event) {
-                        if (event.data[0] < 240) {      // device and channel-specific message
-                            var elmEvent = handleChannelEvent(event);
-                            localRuntime.notify(channelIn.id, elmEvent);
-                        } else if (e.data[0] <= 255) {  // system message
-                            var elmEvent = handleSystemEvent(event);
-                            localRuntime.notify(systemIn.id, elmEvent);
-                        }
-                    }
-
-                    return callback(Task.succeed(port))
+                    return callback(Task.succeed(port.id));
                 },
                 function(error) {
-                    return callback(Task.fail(error))
+                    return callback(Task.fail(error));
                 } );
         });
     }
@@ -165,7 +156,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                     if(port.type === "input") {
                         port.onmidimessage = null;
                     }
-                    return callback(Task.succeed(port))
+                    return callback(Task.succeed(port.id))
                 },
                 function(error) {
                     return callback(Task.fail(error))

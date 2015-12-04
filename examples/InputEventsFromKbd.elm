@@ -12,11 +12,11 @@ import Music exposing (..)
 
 keyboard = "Virtual Keyboard"
 
-port midiAccess : Task String MIDIPort
+port midiAccess : Task String ID
 port midiAccess =
   WebMidi.requestMIDIAccess defaultSettings
            `andThen` \midi -> Task.fromMaybe "No device found" (selectInstrument keyboard midi.inputs)
-           `andThen` \id   -> WebMidi.enableInput id
+           `andThen` \id   -> WebMidi.enableInput (id |> Debug.log "dev id" )
 
 events = Signal.foldp (\e ex -> (decodeChannelEvent e) :: ex) [] WebMidi.channel
 
