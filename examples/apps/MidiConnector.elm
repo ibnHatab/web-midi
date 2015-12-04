@@ -40,16 +40,15 @@ type alias Model
 
 init : Signal (List ChannelMessage)
      -> Signal SystemMessage
-     -> Address String
      -> (Model, Effects Action)
-init chan sys addr =
+init chan sys =
   ( { inputs = []
     , outputs = []
     , channel = chan
     , system = sys
     , error = Nothing
     }
-  , getMidiAccess addr
+  , getMidiAccess
   )
 
 
@@ -210,15 +209,9 @@ headerStyle =
 
 -- EFFECTS
 
--- onChange : Signal.Address Action -> (ID -> Task () ID)
-onChange addr =
-  \id -> Signal.send addr (id |> Debug.log "changed")
-
-getMidiAccess : Signal.Address String -> Effects Action
-getMidiAccess addr =
-  WebMidi.requestMIDIAccess { sysex = False
-                            , onChange = Just (onChange addr) }
-    --defaultSettings
+getMidiAccess : Effects Action
+getMidiAccess =
+  WebMidi.requestMIDIAccess defaultSettings
     |> Task.toMaybe
     |> Task.map NewMidiAccess
     |> Effects.task

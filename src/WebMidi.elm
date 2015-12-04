@@ -22,7 +22,7 @@ order to enable developers to build powerful MIDI software on top..
 
 # Utils to synchronously perform music
 
-@docs jiffy, channel, system
+@docs jiffy, channel, system, onChange
 
 -}
 import Native.WebMidi
@@ -136,6 +136,12 @@ channel =
 system : Signal SystemMessage
 system =
   Native.WebMidi.system
+
+{-| on change notification -}
+onChange : Signal ID
+onChange =
+  Native.WebMidi.onChange
+
 
 {-
 playNote : Address ChannelMessage -> ChannelMessage
