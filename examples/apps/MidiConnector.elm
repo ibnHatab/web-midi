@@ -26,6 +26,7 @@ type alias Port
     , dev : MIDIPort
     , dir : Dir
     , connected : Bool
+    , stale : Bool
     }
 
 
@@ -56,7 +57,8 @@ init chan sys =
 
 type Action
   = NewMidiAccess (Maybe MIDIAccess)
-  | Connect Port
+  | ConnectInput Port
+  | ConnectOutput Port
   | ConnectAllInputs Bool
   | EnableInput (Maybe ID)
   | EnableOutput (Maybe ID)
@@ -65,32 +67,49 @@ type Action
   | OnChange ID
 
 
+{-|
+- add `new` ports after `old`
+- mark some `old` ports as `stale` if not in `new`
+-}
+mergePorts : Dir -> List Port -> Dict ID MIDIPort -> List Port
+mergePorts dir old added =
+  let stale = List.map (\prt -> if Dict.member prt.id added then { prt | stale = False }
+                               else { prt | stale = True })
+              old
+      new = Dict.foldr (\id prt prts ->
+                          if List.any (((==) id) << .id) old then prts
+                          else (Port id prt dir False False) :: prts)
+            [] added
+  in stale ++ new
+
+updatePorts : ID -> (Port -> Port) ->  List Port -> List Port
+updatePorts id fn prts =
+  List.map (\prt -> if id == prt.id then fn prt else prt) prts
+
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
-    case action |> Debug.log "act_conn" of
+    case action |> Debug.log "act_conn"
+    of
       NewMidiAccess Nothing ->
         ({model | error = (Just "Midi not supported") }, Effects.none)
 
       NewMidiAccess (Just midiAccess) ->
         ( { model |
-            inputs  = Dict.foldr (\id prt prts ->
-                                    (Port id prt In False) :: prts ) [] midiAccess.inputs
-          , outputs = Dict.foldr (\id prt prts ->
-                                    (Port id prt Out False) :: prts ) [] midiAccess.outputs
+            inputs = mergePorts In model.inputs midiAccess.inputs
+          , outputs = mergePorts In model.outputs midiAccess.outputs
           }
         , Effects.none
         )
 
+      -- Handle INPUT devices; connect any or all
+      ConnectInput prt ->
+        (model, enableInput prt.id)
 
-      Connect prt ->
-        (model, case prt.dir of
-                  In -> enableInput prt.id
-                  Out -> enableOutput prt.id model.channel model.system
-        )
       ConnectAllInputs flag ->
         ( model
         , model.inputs
+          |> List.filter (((/=) flag) << .connected)
           |> List.map .id
           |> List.map (if flag then enableInput else disablePort)
           |> Effects.batch)
@@ -100,24 +119,27 @@ update action model =
           inputs = updatePorts id (\p -> {p | connected = True }) model.inputs
          }
         , Effects.none)
+
       EnableInput Nothing ->
         ( { model | error = Just "Problem accessing input device!" }, Effects.none)
 
+      -- Handle OUTPUT devices; connect one
+      ConnectOutput prt ->
+        (model, enableOutput prt.id model.channel model.system)
+
       EnableOutput (Just id) ->
-         let toDiconnect = List.filter .connected model.outputs
-             toUpdate = updatePorts id (\p -> {p | connected = True }) model.outputs
-         in ( {model | outputs = toUpdate  }
-            , List.map .id toDiconnect
-              |> List.map disablePort
-              |> Effects.batch )
+        let toDiconnect = List.filter .connected model.outputs
+            toUpdate = updatePorts id (\p -> {p | connected = True }) model.outputs
+        in ( {model | outputs = toUpdate  }
+           , List.map .id toDiconnect
+             |> List.map disablePort
+             |> Effects.batch )
 
       EnableOutput Nothing ->
-        ( { model | error = Just "Problem accessing output device!" }, Effects.none)
-
+        ( { model | error = Just "Problem accessing output device!" }, getMidiAccess)
 
       Disconnect prt ->
         (model, disablePort prt.id)
-
 
       DisablePort (Just id) ->
         ( {model |
@@ -127,18 +149,14 @@ update action model =
         , Effects.none )
 
       DisablePort Nothing ->
-        (model, Effects.none)
+        (model, getMidiAccess)  -- rescan ports in case of raice
 
       OnChange it ->
-        (model, Effects.none)
+        (model, getMidiAccess)
 
-
-updatePorts : ID -> (Port -> Port) ->  List Port -> List Port
-updatePorts id fn prts =
-  List.map (\prt -> if id == prt.id then fn prt else prt) prts
 
 -- VIEW
-
+(=>) : a -> b -> ( a, b )
 (=>) = (,)
 
 view : Signal.Address Action -> Model -> Html
@@ -150,12 +168,31 @@ view address model =
       [ text (Maybe.withDefault "OK" model.error) ]
 
     , inputDeviceList address model.inputs
-    , h3 [] [text "Output"]
+    , outputDeviceList address model.outputs
     ]
 
 inputDeviceList : Address Action -> List Port -> Html
 inputDeviceList address ports =
-  let cssVisibility = if List.isEmpty ports then "hidden" else "visible"
+  let
+      item prt =
+        li []
+             [ div
+               [ class "view" ]
+               [ input
+                 [ class "toggle"
+                 , type' "checkbox"
+                 , checked prt.connected
+                 , onClick address (if not prt.connected then ConnectInput prt
+                                    else Disconnect prt)
+                 ]
+                 []
+               , label
+                 [  ]
+                 [ text prt.dev.name ]
+               ]
+             ]
+
+      cssVisibility = if List.isEmpty ports then "hidden" else "visible"
       allCompleted = List.all .connected ports
   in
     section
@@ -176,27 +213,39 @@ inputDeviceList address ports =
           [ text "Connect all inputs" ]
       , ul
           [ id "dev-list" ]
-          (List.map (deviceItem address) ports)
+          (List.map (item) ports)
       ]
 
-
-deviceItem : Address Action -> Port -> Html
-deviceItem address prt =
-  li []
-       [ div
+outputDeviceList : Address Action -> List Port -> Html
+outputDeviceList address ports =
+  let
+      item prt =
+        div
           [ class "view" ]
           [ input
-            [ class "toggle"
-            , type' "checkbox"
+            [ class "select"
+            , type' "radio"
             , checked prt.connected
-            , onClick address (if not prt.connected then Connect prt
-                               else Disconnect prt)
+            , on "change" targetChecked
+                   (\_ -> Signal.message address (ConnectOutput prt))
             ]
             []
           , label
             [  ]
             [ text prt.dev.name ]
           ]
+      cssVisibility = if List.isEmpty ports then "hidden" else "visible"
+  in
+    section
+    [ id "main"
+    , style [ ("visibility", cssVisibility) ]
+    ]
+      [ h3 [] [text "Outputs"]
+      , div [ class "view" ]
+        -- [
+        --  span [] [text "Hello, how are you?!"]
+        -- ]
+        (List.map (item) ports)
       ]
 
 

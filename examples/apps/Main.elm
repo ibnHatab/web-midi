@@ -40,7 +40,7 @@ type Action
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
-  case message |> Debug.log "main_act"
+  case message -- |> Debug.log "main_act"
   of
     Connector act ->
       let

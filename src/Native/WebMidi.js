@@ -121,7 +121,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         dev.send(message);
                     });
 
-                return callback(Task.succeed(port))
+                return callback(Task.succeed(port.id))
             },
             function(error) {
                 return callback(Task.fail(error))
