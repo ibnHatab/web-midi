@@ -84,7 +84,6 @@ events = Signal.map (Connector << MidiConnector.OnChange) WebMidi.onChange
 (=>) : a -> b -> ( a, b )
 (=>) = (,)
 
-
 view : Signal.Address Action -> Model -> Html.Html
 view address model =
   div [ style [ "display" => "flex", "flex-wrap" => "wrap" ] ]

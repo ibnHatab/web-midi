@@ -55,19 +55,10 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         A3(Dict.insert, port.id, value, elmMidiAccess.outputs);
                 });
 
-		// MIDI device connect/disconnect
-                // TODO: Notification via Task
-		// if (settings.onChange.ctor === 'Just')
-		// {
-                //     midiAccess.onstatechange = function(event) {
-                //         console.log(event)
-		// 	var task = settings.onChange._0(event.port.id);
-		// 	Task.spawn(task);
-		//     };
-	        // }
-
                 midiAccess.onstatechange = function(event) {
-                    localRuntime.notify(onChange.id, event.port.id);
+                    console.log(event)
+                    console.log([event.port.connection, event.port.state])
+                    localRuntime.notify(onChange.id, Tuple2(event.port.id, event.port.state));
                 }
 
                 return callback(Task.succeed(elmMidiAccess))

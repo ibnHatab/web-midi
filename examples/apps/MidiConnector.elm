@@ -64,7 +64,7 @@ type Action
   | EnableOutput (Maybe ID)
   | Disconnect Port
   | DisablePort (Maybe ID)
-  | OnChange ID
+  | OnChange (ID, String)
 
 
 {-|
@@ -116,7 +116,8 @@ update action model =
 
       EnableInput (Just id) ->
         ({model |
-          inputs = updatePorts id (\p -> {p | connected = True }) model.inputs
+          inputs = updatePorts id (\p -> {p | connected = True
+                                         , stale = False}) model.inputs
          }
         , Effects.none)
 
@@ -129,7 +130,8 @@ update action model =
 
       EnableOutput (Just id) ->
         let toDiconnect = List.filter .connected model.outputs
-            toUpdate = updatePorts id (\p -> {p | connected = True }) model.outputs
+            toUpdate = updatePorts id (\p -> {p | connected = True
+                                             , stale = False }) model.outputs
         in ( {model | outputs = toUpdate  }
            , List.map .id toDiconnect
              |> List.map disablePort
@@ -146,14 +148,24 @@ update action model =
            inputs = updatePorts id (\p -> {p | connected = False }) model.inputs
          , outputs = updatePorts id (\p -> {p | connected = False }) model.outputs
           }
-        , Effects.none )
-
+        , Effects.none
+        )
       DisablePort Nothing ->
         (model, getMidiAccess)  -- rescan ports in case of raice
 
-      OnChange it ->
-        (model, getMidiAccess)
-
+      OnChange (id, action) ->
+        case action of
+          "connected" ->
+            (model, getMidiAccess)
+          "disconnected" ->
+            ( {model |
+               inputs = updatePorts id (\p -> {p | stale = True }) model.inputs
+              , outputs = updatePorts id (\p -> {p | stale = True }) model.outputs
+              }
+            , Effects.none
+            )
+          otherwise ->
+            (model, Effects.none)
 
 -- VIEW
 (=>) : a -> b -> ( a, b )
@@ -164,8 +176,9 @@ view address model =
   div [ style [ "width" => "200px" ] ]
     [ h2 [headerStyle] [text "Connector"]
     , div [ class "access-error"
-          , style [ ("visibility", if model.error == Nothing then "hidden" else "visible") ]]
-      [ text (Maybe.withDefault "OK" model.error) ]
+          , style [ ("visibility", if model.error == Nothing then "hidden" else "visible") ]
+          ]
+          [ text (Maybe.withDefault "OK" model.error) ]
 
     , inputDeviceList address model.inputs
     , outputDeviceList address model.outputs
@@ -187,7 +200,7 @@ inputDeviceList address ports =
                  ]
                  []
                , label
-                 [  ]
+                 (if prt.stale then [ style ["text-decoration" => "line-through"] ] else [])
                  [ text prt.dev.name ]
                ]
              ]
@@ -226,6 +239,7 @@ outputDeviceList address ports =
             [ class "select"
             , type' "radio"
             , checked prt.connected
+            , readonly (not prt.stale)
             , on "change" targetChecked
                    (\_ -> Signal.message address (ConnectOutput prt))
             ]

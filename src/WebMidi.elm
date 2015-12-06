@@ -79,16 +79,13 @@ initSystemMsg = SystemMessage 0 "" 0
 configuration changes. -}
 type alias Settings =
   { sysex : Bool
-  , onChange : Maybe (String -> Task () ())
   }
 
 {-| The default settings used by access to MIDI devices -}
 defaultSettings : Settings
 defaultSettings =
-    { sysex = False
-    , onChange = Nothing
---    , midiNote = Nothing
-    }
+  { sysex = False
+  }
 
 {-| Checks if the Web MIDI API is available and then tries to connect
 to the host's MIDI subsystem.
@@ -138,7 +135,7 @@ system =
   Native.WebMidi.system
 
 {-| on change notification -}
-onChange : Signal ID
+onChange : Signal (ID, String)
 onChange =
   Native.WebMidi.onChange
 
