@@ -104,7 +104,8 @@ update action model =
 
       -- Handle INPUT devices; connect any or all
       ConnectInput prt ->
-        (model, enableInput prt.id)
+        (model, if not prt.stale then enableInput prt.id
+                else Effects.none)
 
       ConnectAllInputs flag ->
         ( model
@@ -118,6 +119,7 @@ update action model =
         ({model |
           inputs = updatePorts id (\p -> {p | connected = True
                                          , stale = False}) model.inputs
+         , error = Nothing
          }
         , Effects.none)
 
@@ -126,27 +128,33 @@ update action model =
 
       -- Handle OUTPUT devices; connect one
       ConnectOutput prt ->
-        (model, enableOutput prt.id model.channel model.system)
+        ( model, Effects.batch <|
+                 (List.filter .connected model.outputs
+                  |> List.map .id
+                  |> List.map disablePort
+                 ) ++ [ if not prt.stale then enableOutput prt.id model.channel model.system
+                        else Effects.none
+                      ]
+        )
 
       EnableOutput (Just id) ->
-        let toDiconnect = List.filter .connected model.outputs
-            toUpdate = updatePorts id (\p -> {p | connected = True
-                                             , stale = False }) model.outputs
-        in ( {model | outputs = toUpdate  }
-           , List.map .id toDiconnect
-             |> List.map disablePort
-             |> Effects.batch )
+        ( { model | outputs = updatePorts id (\p -> {p | connected = True
+                                                    , stale = False }) model.outputs
+          , error = Nothing }
+        , Effects.none
+        )
 
       EnableOutput Nothing ->
         ( { model | error = Just "Problem accessing output device!" }, getMidiAccess)
 
       Disconnect prt ->
-        (model, disablePort prt.id)
+        ( model, disablePort prt.id )
 
       DisablePort (Just id) ->
-        ( {model |
-           inputs = updatePorts id (\p -> {p | connected = False }) model.inputs
-         , outputs = updatePorts id (\p -> {p | connected = False }) model.outputs
+        ( { model |
+            inputs = updatePorts id (\p -> {p | connected = False }) model.inputs
+          , outputs = updatePorts id (\p -> {p | connected = False }) model.outputs
+          , error = Nothing
           }
         , Effects.none
         )
