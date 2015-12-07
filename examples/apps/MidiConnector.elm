@@ -182,7 +182,7 @@ update action model =
 view : Signal.Address Action -> Model -> Html
 view address model =
   div [ style [ "width" => "200px" ] ]
-    [ h2 [headerStyle] [text "Connector"]
+    [ h2 [] [text "Connector"]
     , div [ class "access-error"
           , style [ ("visibility", if model.error == Nothing then "hidden" else "visible") ]
           ]
@@ -271,12 +271,12 @@ outputDeviceList address ports =
       ]
 
 
-headerStyle : Attribute
-headerStyle =
-  style
-    [ "width" => "200px"
-    , "text-align" => "center"
-    ]
+-- headerStyle : Attribute
+-- headerStyle =
+--   style
+--     [ "width" => "200px"
+--     , "text-align" => "center"
+--     ]
 
 -- EFFECTS
 
