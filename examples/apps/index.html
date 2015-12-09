@@ -1,0 +1,41 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>elm-piano</title>
+  <script type="text/javascript" src="Main.js"></script>
+  <style>
+   .key { position: absolute; font-family: Helvetica; font-weight: 100; font-size: 12px;
+       border: 1px solid rgba(32,32,32,0.2);
+       border-radius: 0px 0px 5px 5px;
+       cursor:pointer;
+       box-shadow: 0px 5px 1px rgba(32,32,32,0.2);
+       -webkit-transition: margin 0.05s ease, background-color 0.05s ease, box-shadow 0.05s ease; }
+
+   .key:hover { background-color: rgb(255,192,32); }
+
+   .key .label { position: absolute; bottom: 5px; text-align: center; left: 0px; right: 0px; }
+
+   .black { background-color: rgb(32,32,32); color: #ffffff; z-index: 1;
+       text-shadow: 0px -1px 1px rgba(255,255,255,0.5); }
+
+   .white { background-color: #ffffff; color: rgb(32,32,32); z-index: 0;
+       text-shadow: 0px 1px 1px rgba(32,32,32,0.5); }
+
+   .keyboard-holder { margin: 30px auto; height: 200px; position:relative;
+       user-select:none; -webkit-user-select:none;-moz-user-select:none;-o-user-select:none; }
+
+  </style>
+</head>
+
+<body>
+</body>
+
+<script type="text/javascript">
+var elmApp = Elm.fullscreen(Elm.Main, {});
+</script>
+
+</html>
