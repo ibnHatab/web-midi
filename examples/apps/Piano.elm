@@ -12,7 +12,10 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 import Music exposing (..)
-
+import String exposing (..)
+import List exposing (..)
+import List.Extra exposing (takeWhile)
+import Dict exposing (..)
 -- MODEL
 
 type KeyType = White | Black
@@ -34,17 +37,17 @@ defaultMap2 = ("zsxdcvgbhnjmZSXDCVGBHNJM", (C,3))
 defaultMap0 : PianoKeyMap
 defaultMap0 = (fst defaultMap1 ++ fst defaultMap2, (C,3))
 
-
 type alias Model =
     {
       firstOctave : Octave
     , width : Int
+    , showLabels : Maybe PianoKeyMap
     }
 
 
 init : (Model, Effects Action)
 init =
-  ( Model 2 2
+  ( Model 1 2 (Just defaultMap1)
   , Effects.none
   )
 
@@ -68,21 +71,38 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   div [ style [ "width" => "200px" ] ]
     [ h2 [] [text "Piano"]
-    , keyboardHolder address model.firstOctave model.width
+    , keyboardHolder address model.firstOctave model.width model.showLabels
     ]
 
--- <div id="keyboard" class="keyboard-holder" style="width: 840px;">
-keyboardHolder : Address Action -> Octave -> Int -> Html
-keyboardHolder address octave width =
+mkEvents octaves keyMap =
+  Dict.empty
+
+mkLbls octaves keyMap =
+  case keyMap of
+    Nothing ->
+      List.repeat ((List.length octaves) * 12) ""
+    Just (string, (pitch, oct )) ->
+      let total = (List.length octaves)
+          covered = (String.length string) // 12
+          pre = takeWhile (\x -> x < oct) octaves
+      in
+        (List.repeat ((List.length pre) * 12) "")
+        ++ (String.split "" string)
+        ++ (List.repeat ((total-covered) * 12) "")
+
+keyboardHolder : Address Action -> Octave -> Int -> Maybe PianoKeyMap -> Html
+keyboardHolder address octave width keyMap =
   let octaves = [octave .. (octave + width)]
+      labels = mkLbls octaves keyMap
+
       layout : Octave -> List (Octave, (KeyType, PitchClass))
       layout n = List.map2 (,) (List.repeat defaultKeyLayoutLength n) defaultKeyLayout
-      keyboard = List.map layout octaves |> List.concat
+      keyboard = List.map layout octaves |> List.concat |> List.map2 (,) labels
 
-      chooseKey (o, (kt, p)) (left, ks) =
+      chooseKey (lb, (o, (kt, p))) (left, ks) =
         case kt of
-          White -> (left + 40,  (whiteKey (p, o) left) :: ks )
-          Black -> (left,       (blackKey (p, o) (left + 25 - 40)) :: ks )
+          White -> (left + 40,  (whiteKey (p, o) lb left) :: ks )
+          Black -> (left,       (blackKey (p, o) lb (left + 25 - 40)) :: ks )
 
       (totalWidth, keys) = List.foldl chooseKey (0, []) keyboard
   in
@@ -92,11 +112,9 @@ keyboardHolder address octave width =
   ]
   (List.reverse keys)
 
--- <div class="white key" id="KEY_C,-1" style="width: 40px; height: 200px; left: 0px; margin-top: 5px; box-shadow: none; background-color: rgb(255, 0, 0);">
--- <div class="label"><b>Q</b><br><br>C<span name="OCTAVE_LABEL" value="-1">3</span></div></div>
 
-whiteKey : Pitch -> Int -> Html
-whiteKey p left =
+whiteKey : Pitch -> String -> Int -> Html
+whiteKey p lbl left =
   div
   [ class "white key"
   , style [ "width" => "40px"
@@ -105,12 +123,12 @@ whiteKey p left =
           ]
   ]
   [ div
-    [ class "key-label" ]
-    [ span [] [] ]
+    [ class "label" ]
+    [ text lbl ]
   ]
 
-blackKey : Pitch -> Int -> Html
-blackKey p left =
+blackKey : Pitch -> String -> Int -> Html
+blackKey p lbl left =
   div
   [ class "black key"
   , style [ "width" => "30px"
@@ -119,6 +137,6 @@ blackKey p left =
           ]
   ]
   [ div
-    [ class "key-label" ]
-    [ span [] [] ]
+    [ class "label" ]
+    [ text lbl ]
   ]
