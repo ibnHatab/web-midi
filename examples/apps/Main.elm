@@ -10,6 +10,12 @@ import WebMidi exposing (..)
 import Piano exposing (Action, view, init)
 import MidiConnector exposing (Action, view, init)
 
+import Char exposing (KeyCode, toUpper)
+import Set exposing (Set, map)
+import Keyboard exposing (..)
+import String exposing (..)
+import Dict exposing (..)
+
 import Debug
 
 
@@ -20,11 +26,13 @@ type alias Model =
   , piano : Piano.Model
   }
 
+pianoKeyMap = Piano.defaultMap1
+
 init : (Model, Effects Action)
 init =
   let
     (connector, connectorFx) = MidiConnector.init midiOut.signal sysOut.signal
-    (piano, pianoFx) = Piano.init
+    (piano, pianoFx) = Piano.init 3 2 (Just pianoKeyMap) midiOut.address
   in
     ( Model connector piano
     , Effects.batch
@@ -58,6 +66,7 @@ update message model =
         )
 
 
+
 -- SIGNALS
 
 midiOut : Signal.Mailbox (List ChannelMessage)
@@ -75,10 +84,42 @@ port sysOutPort : Signal SystemMessage
 port sysOutPort = sysOut.signal
 
 inputs : List (Signal Action)
-inputs = [events]
+inputs = [events, keyPressed]
 
 events : Signal Action
 events = Signal.map (Connector << MidiConnector.OnChange) WebMidi.onChange
+
+
+dropMap : (a -> b) -> Signal a -> Signal b
+dropMap f signal =
+  Signal.dropRepeats (Signal.map f signal)
+
+codeSpetialKeys = [('`', '~'), ('1', '!'), ('2', '@'), ('3', '#'), ('4', '$'),
+                   ('5', '%'), ('6', '^'), ('7', '&'), ('8', '*'), ('9', '('),
+                   ('0', ')'), ('-', '_'), ('=', '+'), ('[', '{'), (']', '}'),
+                   ('|', '\\'), ('\'', '\"'), (';', ':'), ('/', '?'), ('.', '>'),
+                   (',', '<')] |> Dict.fromList
+
+fromCodeSpetial : Int -> Char
+fromCodeSpetial code =
+  let c = Char.fromCode code
+  in Maybe.withDefault c (Dict.get c codeSpetialKeys)
+
+pianoKeyToPitch = Piano.expandKeyMap pianoKeyMap
+
+keyPressed : Signal Action
+keyPressed = dropMap (\chars -> if not (Set.member 16 chars) -- if Shift not pressed
+                                then Set.map (Char.toLower << Char.fromCode) chars
+                                else Set.map fromCodeSpetial chars
+                     ) Keyboard.keysDown
+
+             |> Signal.map (Set.foldr (\c acc -> case Dict.get c pianoKeyToPitch of
+                                                   Nothing ->
+                                                     acc
+                                                   Just p ->
+                                                     p :: acc
+                                      ) [] )
+             |> Signal.map (Piano << Piano.KeysDown)
 
 -- VIEW
 (=>) : a -> b -> ( a, b )
@@ -87,9 +128,8 @@ events = Signal.map (Connector << MidiConnector.OnChange) WebMidi.onChange
 view : Signal.Address Action -> Model -> Html.Html
 view address model =
   div [ style [ "display" => "flex", "flex-wrap" => "wrap" ] ]
-      [ -- MidiConnector.view (Signal.forwardTo address Connector) model.midiConnector
---      ,
-        Piano.view (Signal.forwardTo address Piano) model.piano
+      [ MidiConnector.view (Signal.forwardTo address Connector) model.midiConnector
+      , Piano.view (Signal.forwardTo address Piano) model.piano
       ]
 
 -- APP
