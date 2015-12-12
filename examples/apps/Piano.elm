@@ -24,13 +24,7 @@ import MidiEvent exposing (..)
 import Music exposing (..)
 
 -- MODEL
-
 type KeyType = White | Black
-
-defaultKeyLayout : List (KeyType, PitchClass)
-defaultKeyLayout =  [(White, C), (Black, Cs), (White, D), (Black, Ds), (White, E), (White, F),
-                     (Black, Fs), (White, G), (Black, Gs), (White, A), (Black, As), (White, B)]
-
 
 {-| PC keyboard layout to pitch map -}
 type alias PianoKeyMap = (String, Pitch)
@@ -67,6 +61,10 @@ init octave width keymap modiOutput =
     , Effects.map TimeRef (Effects.task WebMidi.jiffy)
     )
 
+bwKeyLayout : List (KeyType, PitchClass)
+bwKeyLayout =  [(White, C), (Black, Cs), (White, D), (Black, Ds), (White, E), (White, F),
+                     (Black, Fs), (White, G), (Black, Gs), (White, A), (Black, As), (White, B)]
+
 mkLbls : List Octave -> Maybe PianoKeyMap -> List String
 mkLbls octaves keyMap =
   case keyMap of
@@ -83,11 +81,11 @@ mkLbls octaves keyMap =
 
 mkKeyboarSpec : Octave -> Int -> Maybe PianoKeyMap -> KeyboardSpec
 mkKeyboarSpec octave width keyMap =
-  let octaves = [octave .. (octave + width)]
-      labels = mkLbls octaves keyMap
+  let octaves = [octave .. (octave + width - 1)]
+      labels = mkLbls (octaves |> Debug.log "0") keyMap
 
       layout : Octave -> List (Octave, (KeyType, PitchClass))
-      layout n = LX.zip (repeat (L.length defaultKeyLayout) n) defaultKeyLayout
+      layout n = LX.zip (repeat (L.length bwKeyLayout) n) bwKeyLayout
    in
      L.map layout octaves |> L.concat |> LX.zip labels
 
@@ -98,7 +96,7 @@ defaultMap2 : PianoKeyMap
 defaultMap2 = ("zsxdcvgbhnjmZSXDCVGBHNJM", (C,3))
 
 defaultMap0 : PianoKeyMap
-defaultMap0 = (fst defaultMap1 ++ fst defaultMap2, (C,3))
+defaultMap0 = (fst defaultMap1 ++ fst defaultMap2, (C,2))
 
 expandKeyMap : PianoKeyMap -> Dict Char Pitch
 expandKeyMap (string, (pitch, oct )) =
@@ -107,13 +105,38 @@ expandKeyMap (string, (pitch, oct )) =
                 List.repeat covered [C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B]
         octave = List.concat <|
                  List.map (List.repeat 12) [oct .. (oct+covered)]
-
         pitches = List.map2 (,) class octave
     in
       List.map2 (,) (S.toList string) pitches |> Dict.fromList
 
--- UPDATE
+codeSpetialKeys = [('`', '~'), ('1', '!'), ('2', '@'), ('3', '#'), ('4', '$'),
+                   ('5', '%'), ('6', '^'), ('7', '&'), ('8', '*'), ('9', '('),
+                   ('0', ')'), ('-', '_'), ('=', '+'), ('[', '{'), (']', '}'),
+                   ('|', '\\'), ('\'', '\"'), (';', ':'), ('/', '?'), ('.', '>'),
+                   (',', '<')] |> Dict.fromList
 
+fromCodeSpetial : Int -> Char
+fromCodeSpetial code =
+  let c = Char.fromCode code
+  in Maybe.withDefault c (Dict.get c codeSpetialKeys)
+
+keyName : PitchClass -> String
+keyName p = case p of
+              C  -> "C"
+              Cs -> "#C"
+              D  -> "D"
+              Ds -> "#D"
+              E  -> "E"
+              F  -> "F"
+              Fs -> "#F"
+              G  -> "G"
+              Gs -> "#G"
+              A  -> "A"
+              As -> "#A"
+              B  -> "B"
+              otherwise -> ""
+
+-- UPDATE
 type Action
   = None
   | KeysDown (List Pitch)
@@ -208,7 +231,7 @@ whiteKey address pressed p lbl left =
   ]
   [ div
     [ class "label" ]
-    [ text lbl ]
+    [ text lbl, br[][], br[][], text ((keyName (fst p)) ++ (toString (snd p))) ]
   ]
 
 blackKey : Address Action -> Bool -> Pitch -> String -> Int -> Html
@@ -229,5 +252,5 @@ blackKey address pressed p lbl left =
   ]
   [ div
     [ class "label" ]
-    [ text lbl ]
+    [ text lbl, br[][], br[][], text ((keyName (fst p)) ++ (toString (snd p))) ]
   ]

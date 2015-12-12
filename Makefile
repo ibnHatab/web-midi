@@ -1,5 +1,5 @@
 
-.PHONY: test
+.PHONY: test examples/apps/Main.elm
 
 ELM_COMPILE=elm-make --yes --warn
 
@@ -16,9 +16,8 @@ DEMO =  demo/InputEventsFromKbd.html \
 	demo/PerformMusic.html	\
 	demo/PlayNote.html
 
-
 all: compile
-	~/bin/chrome-reload.sh "Main"
+	~/bin/chrome-reload.sh "elm-piano"
 
 compile: $(TARGETS_JS)
 	$(ELM_COMPILE)

@@ -89,7 +89,7 @@ updatePorts id fn prts =
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
-    case action |> Debug.log "act_conn"
+    case action -- |> Debug.log "act_conn"
     of
       NewMidiAccess Nothing ->
         ({model | error = (Just "Midi not supported") }, Effects.none)

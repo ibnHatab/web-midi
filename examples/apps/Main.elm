@@ -18,7 +18,6 @@ import Dict exposing (..)
 
 import Debug
 
-
 -- MODEL
 type alias Model =
   {
@@ -26,13 +25,13 @@ type alias Model =
   , piano : Piano.Model
   }
 
-pianoKeyMap = Piano.defaultMap1
+pianoKeyMap = Piano.defaultMap0
 
 init : (Model, Effects Action)
 init =
   let
     (connector, connectorFx) = MidiConnector.init midiOut.signal sysOut.signal
-    (piano, pianoFx) = Piano.init 3 2 (Just pianoKeyMap) midiOut.address
+    (piano, pianoFx) = Piano.init 2 4 (Just pianoKeyMap) midiOut.address
   in
     ( Model connector piano
     , Effects.batch
@@ -66,9 +65,7 @@ update message model =
         )
 
 
-
 -- SIGNALS
-
 midiOut : Signal.Mailbox (List ChannelMessage)
 midiOut =
   Signal.mailbox [initChannelMsg]
@@ -94,23 +91,13 @@ dropMap : (a -> b) -> Signal a -> Signal b
 dropMap f signal =
   Signal.dropRepeats (Signal.map f signal)
 
-codeSpetialKeys = [('`', '~'), ('1', '!'), ('2', '@'), ('3', '#'), ('4', '$'),
-                   ('5', '%'), ('6', '^'), ('7', '&'), ('8', '*'), ('9', '('),
-                   ('0', ')'), ('-', '_'), ('=', '+'), ('[', '{'), (']', '}'),
-                   ('|', '\\'), ('\'', '\"'), (';', ':'), ('/', '?'), ('.', '>'),
-                   (',', '<')] |> Dict.fromList
-
-fromCodeSpetial : Int -> Char
-fromCodeSpetial code =
-  let c = Char.fromCode code
-  in Maybe.withDefault c (Dict.get c codeSpetialKeys)
 
 pianoKeyToPitch = Piano.expandKeyMap pianoKeyMap
 
 keyPressed : Signal Action
 keyPressed = dropMap (\chars -> if not (Set.member 16 chars) -- if Shift not pressed
                                 then Set.map (Char.toLower << Char.fromCode) chars
-                                else Set.map fromCodeSpetial chars
+                                else Set.map Piano.fromCodeSpetial chars
                      ) Keyboard.keysDown
 
              |> Signal.map (Set.foldr (\c acc -> case Dict.get c pianoKeyToPitch of
