@@ -136,7 +136,17 @@ performance = performM ctx tune
 
 > qsynth &
 
+> timidity -iA
 
-Link audio inputs and MIDI instruments in `qjackl` UI.
+### Install timidity on debian
+Add `deb http://www.fbriere.net/debian stable misc` >> /etc/apt/sources.list
+
+> sudo apt-get update
+> sudo apt-get install timidity timidity-interfaces-extra timidity-daemon
+> sudo apt-get install eawpatches
+
+Configure `/etc/timidity/timidity.cfg` add `source /etc/timidity/eawpatches.cfg`
+
+### Link audio inputs and MIDI instruments in `qjackl` UI.
 
 ![Configure JACK connections](demo/MIDI-on-Linux.png)

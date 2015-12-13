@@ -63,7 +63,7 @@ init octave width keymap modiOutput =
 
 bwKeyLayout : List (KeyType, PitchClass)
 bwKeyLayout =  [(White, C), (Black, Cs), (White, D), (Black, Ds), (White, E), (White, F),
-                     (Black, Fs), (White, G), (Black, Gs), (White, A), (Black, As), (White, B)]
+                (Black, Fs), (White, G), (Black, Gs), (White, A), (Black, As), (White, B)]
 
 mkLbls : List Octave -> Maybe PianoKeyMap -> List String
 mkLbls octaves keyMap =
@@ -139,7 +139,8 @@ keyName p = case p of
 -- UPDATE
 type Action
   = None
-  | KeysDown (List Pitch)
+  | PithOn  (List Pitch)
+  | PithOff (List Pitch)
   | MouseOn Pitch
   | MouseOff Pitch
   | TimeRef Float
@@ -147,25 +148,26 @@ type Action
 
 
 sendToMidi ctor address pitches =
-  let play p = encodeChannelEvent (0, ctor 1 (absPitch p) 50)
+  let play p = encodeChannelEvent (0, ctor 1 (absPitch p) 90)
       events = List.map play pitches
   in
   Signal.send address events |> Effects.task |> Effects.map (\_ -> NoOp)
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
-    case action of
+    case action -- |> Debug.log "act_piano"
+    of
       None ->
         (model, Effects.none)
-      KeysDown pitches ->
-        let stop  = L.filter (\p -> not (L.member p pitches)) model.pressedKeys
-            start = L.filter (\p -> not (L.member p model.pressedKeys)) pitches
+      PithOn pitches ->
+        ( { model | pressedKeys = pitches ++ model.pressedKeys }
+        , sendToMidi NoteOn model.modiOutput pitches
+        )
+      PithOff pitches ->
+        let (stop, rest) = L.partition (\p -> (L.member p pitches)) model.pressedKeys
         in
-        ( { model | pressedKeys = pitches }
-        , Effects.batch
-                   [ sendToMidi NoteOn model.modiOutput start
-                   , sendToMidi NoteOff model.modiOutput stop
-                   ]
+        ( { model | pressedKeys = rest }
+        , sendToMidi NoteOff model.modiOutput stop
         )
       MouseOn p ->
         ( { model | mouseOn = [p] }

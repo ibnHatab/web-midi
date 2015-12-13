@@ -270,14 +270,6 @@ outputDeviceList address ports =
         (List.map (item) ports)
       ]
 
-
--- headerStyle : Attribute
--- headerStyle =
---   style
---     [ "width" => "200px"
---     , "text-align" => "center"
---     ]
-
 -- EFFECTS
 
 getMidiAccess : Effects Action
