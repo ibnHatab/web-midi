@@ -138,7 +138,7 @@ performance = performM ctx tune
 
 > timidity -iA
 
-### Install timidity on debian
+### Install timidity on debian (it sucks big time)
 Add `deb http://www.fbriere.net/debian stable misc` >> /etc/apt/sources.list
 
 > sudo apt-get update
@@ -150,3 +150,8 @@ Configure `/etc/timidity/timidity.cfg` add `source /etc/timidity/eawpatches.cfg`
 ### Link audio inputs and MIDI instruments in `qjackl` UI.
 
 ![Configure JACK connections](demo/MIDI-on-Linux.png)
+
+
+### Using instruments
+Piano interface. Under test!
+[DEMO](https://raw.githack.com/ibnHatab/WebMidi/master/examples/apps/index.html)
