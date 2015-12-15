@@ -3,7 +3,8 @@
 
 ELM_COMPILE=elm-make --yes --warn
 
-ELM_IO = elm-stuff/packages/maxsnew/IO/1.0.1/elm-io.sh
+ELM_IO = elm-stuff/packages/laszlopandy/elm-console/1.0.3/elm-io.sh
+# elm-stuff/packages/maxsnew/IO/1.0.1/elm-io.sh
 
 TESTS=$(wildcard tests/*.elm)
 TESTS_JS=$(patsubst %.elm,%.elm.test.js,$(TESTS))

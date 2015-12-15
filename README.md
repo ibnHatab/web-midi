@@ -124,7 +124,7 @@ performance = performM ctx tune
 
 - Start JACK
 
-> qjackcl &
+> qjackctl &
 
 - Add Virtual Keyboard
 

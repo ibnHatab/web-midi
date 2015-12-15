@@ -167,7 +167,7 @@ type alias AbsPitch = Int
 {-| Converter AbsPitch from Pitch -}
 absPitch : Pitch -> AbsPitch
 -- absPitch (pc,oct) = 12*(oct + 4) + pcToInt pc
-absPitch (pc,oct) = 12*oct + pcToInt pc
+absPitch (pc,oct) = 12*(oct+1) + pcToInt pc
 
 {-| Pitch of AbsPitch -}
 pitch : AbsPitch -> Pitch
@@ -185,7 +185,7 @@ pitch ap = ( case (ap % 12) of
                10 -> As
                11 -> B
                otherwise -> Cf
-           , floor ((toFloat ap) / 12) )
+           , floor ((toFloat ap) / 12 - 1))
 
 {-| Pitches Dict -}
 pcToInt : PitchClass -> Int

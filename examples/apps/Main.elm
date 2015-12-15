@@ -6,9 +6,10 @@ import StartApp
 import Task
 
 import WebMidi exposing (..)
+import MidiEvent exposing (..)
 
 import Piano exposing (Action, view, init)
-import Music exposing (Pitch)
+import Music exposing (..)
 import MidiConnector exposing (Action, view, init)
 
 import Char exposing (KeyCode, toUpper)
@@ -33,7 +34,7 @@ init : (Model, Effects Action)
 init =
   let
     (connector, connectorFx) = MidiConnector.init midiOut.signal sysOut.signal
-    (piano, pianoFx) = Piano.init 2 4 (Just pianoKeyMap) midiOut.address
+    (piano, pianoFx) = Piano.init 2 5 (Just pianoKeyMap) midiOut.address
   in
     ( Model connector piano Set.empty
     , Effects.batch
@@ -47,6 +48,7 @@ type Action
   = Connector MidiConnector.Action
   | Piano Piano.Action
   | Keyboard (Set KeyCode)
+  | NoOp
 
 update : Action -> Model -> (Model, Effects Action)
 update message model =
@@ -82,7 +84,7 @@ update message model =
 
         (piano', fx') = if not (List.isEmpty lifted)
                         then Piano.update (Piano.PithOff lifted) piano
-                        else (model.piano, Effects.none)
+                        else (piano, Effects.none)
       in
       ( { model | keyCodes = keyCodes, piano = piano' }
       , Effects.batch
@@ -90,7 +92,8 @@ update message model =
                  , Effects.map Piano fx'
                  ]
       )
-
+    NoOp ->
+      (model, Effects.none)
 
 pianoKeyToPitch : Dict Char Music.Pitch
 pianoKeyToPitch = Piano.expandKeyMap pianoKeyMap
@@ -98,7 +101,6 @@ pianoKeyToPitch = Piano.expandKeyMap pianoKeyMap
 keyEventToChar : Bool -> Set Int -> Set Char
 keyEventToChar shift ev =
   Set.filter (\c -> c > 46 && c <= 90) ev -- keep ASCII only
-    |> Debug.log "ev1"
     |> if not shift
        then Set.map (Char.toLower << Char.fromCode)
        else Set.map Piano.fromCodeSpetial
@@ -112,6 +114,32 @@ charToPitch = Set.foldr (\c acc -> case Dict.get c pianoKeyToPitch of
                         ) []
 
 -- SIGNALS
+inputs : List (Signal Action)
+inputs = [midiOnChange, keyPressed, midiEvents]
+
+midiOnChange : Signal Action
+midiOnChange = Signal.map (Connector << MidiConnector.OnChange) WebMidi.onChange
+
+keyPressed : Signal Action
+keyPressed =
+  Signal.dropRepeats Keyboard.keysDown
+    |> Signal.map Keyboard
+
+
+midiEvents : Signal Action
+midiEvents =
+  Signal.map (\e -> case decodeChannelEvent e of
+                      (t, NoteOn ch p v) ->
+                        Piano (Piano.PithOn [pitch p])
+                      (t, NoteOff  ch p v) ->
+                        Piano (Piano.PithOff [pitch p])
+                      otherwise ->
+                        NoOp
+             )
+  WebMidi.channel
+
+
+-- Multiplexed output
 midiOut : Signal.Mailbox (List ChannelMessage)
 midiOut =
   Signal.mailbox [initChannelMsg]
@@ -126,20 +154,6 @@ sysOut =
 port sysOutPort : Signal SystemMessage
 port sysOutPort = sysOut.signal
 
-inputs : List (Signal Action)
-inputs = [events, keyPressed]
-
-events : Signal Action
-events = Signal.map (Connector << MidiConnector.OnChange) WebMidi.onChange
-
-
-dropMap : (a -> b) -> Signal a -> Signal b
-dropMap f signal =
-  Signal.dropRepeats (Signal.map f signal)
-
-keyPressed : Signal Action
-keyPressed =
-  dropMap (Keyboard) Keyboard.keysDown
 
 
 

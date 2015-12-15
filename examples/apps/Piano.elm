@@ -93,7 +93,7 @@ defaultMap1 : PianoKeyMap
 defaultMap1 = ("q2w3er5t6y7uQ@W#ER%T^Y&U", (C,2))
 
 defaultMap2 : PianoKeyMap
-defaultMap2 = ("zsxdcvgbhnjmZSXDCVGBHNJM", (C,3))
+defaultMap2 = ("zsxdcvgbhnjmZSXDCVGBHNJM", (C,2))
 
 defaultMap0 : PianoKeyMap
 defaultMap0 = (fst defaultMap1 ++ fst defaultMap2, (C,2))
@@ -147,15 +147,9 @@ type Action
   | NoOp
 
 
-sendToMidi ctor address pitches =
-  let play p = encodeChannelEvent (0, ctor 1 (absPitch p) 90)
-      events = List.map play pitches
-  in
-  Signal.send address events |> Effects.task |> Effects.map (\_ -> NoOp)
-
 update : Action -> Model -> (Model, Effects Action)
 update action model =
-    case action -- |> Debug.log "act_piano"
+    case action  |> Debug.log "act_piano"
     of
       None ->
         (model, Effects.none)
@@ -184,6 +178,12 @@ update action model =
       NoOp ->
         ( model, Effects.none )
 
+
+sendToMidi ctor address pitches =
+  let play p = encodeChannelEvent (0, ctor 1 (absPitch p) 90)
+      events = List.map play pitches
+  in
+  Signal.send address events |> Effects.task |> Effects.map (\_ -> NoOp)
 
 -- VIEW
 (=>) : a -> b -> ( a, b )
