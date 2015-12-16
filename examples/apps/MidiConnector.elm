@@ -89,7 +89,7 @@ updatePorts id fn prts =
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
-    case action -- |> Debug.log "act_conn"
+    case action |> Debug.log "act_conn"
     of
       NewMidiAccess Nothing ->
         ({model | error = (Just "Midi not supported") }, Effects.none)
@@ -104,70 +104,81 @@ update action model =
 
       -- Handle INPUT devices; connect any or all
       ConnectInput prt ->
-        (model, if not prt.stale then enableInput prt.id
-                else Effects.none)
+        ( { model | inputs = updatePorts prt.id (\p -> {p | connected = True}) model.inputs }
+          , if not prt.stale
+            then enableInput prt.id
+            else Effects.none)
 
       ConnectAllInputs flag ->
         ( model
         , model.inputs
           |> List.filter (((/=) flag) << .connected)
+          |> List.map (\p -> {p | connected = flag})
           |> List.map .id
           |> List.map (if flag then enableInput else disablePort)
           |> Effects.batch)
 
       EnableInput (Just id) ->
-        ({model |
-          inputs = updatePorts id (\p -> {p | connected = True
-                                         , stale = False}) model.inputs
-         , error = Nothing
-         }
-        , Effects.none)
+          ({model | error = Nothing }, Effects.none)
 
       EnableInput Nothing ->
         ( { model | error = Just "Problem accessing input device!" }, Effects.none)
 
       -- Handle OUTPUT devices; connect one
       ConnectOutput prt ->
-        ( model, Effects.batch <|
-                 (List.filter .connected model.outputs
-                  |> List.map .id
-                  |> List.map disablePort
-                 ) ++ [ if not prt.stale then enableOutput prt.id model.channel model.system
-                        else Effects.none
-                      ]
+        ( { model | outputs = List.map (\p -> { p | connected = (p == prt) }) model.outputs
+          }
+        , ( if not prt.stale
+            then enableOutput prt.id model.channel model.system
+            else Effects.none
+          ) :: ( model.outputs |> List.filter .connected
+                               |> List.map .id
+                               |> List.map disablePort )
+          |> Effects.batch
         )
 
       EnableOutput (Just id) ->
-        ( { model | outputs = updatePorts id (\p -> {p | connected = True
-                                                    , stale = False }) model.outputs
-          , error = Nothing }
-        , Effects.none
-        )
+        ( { model | error = Nothing }, Effects.none )
 
       EnableOutput Nothing ->
         ( { model | error = Just "Problem accessing output device!" }, getMidiAccess)
 
       Disconnect prt ->
-        ( model, disablePort prt.id )
+        ( { model |
+            inputs = updatePorts prt.id (\p -> {p | connected = False }) model.inputs
+          , outputs = updatePorts prt.id (\p -> {p | connected = False }) model.outputs
+          }
+        , disablePort prt.id
+        )
 
       DisablePort (Just id) ->
-        ( { model |
-            inputs = updatePorts id (\p -> {p | connected = False }) model.inputs
-          , outputs = updatePorts id (\p -> {p | connected = False }) model.outputs
-          , error = Nothing
-          }
-        , Effects.none
-        )
+        ( { model | error = Nothing}, Effects.none )
+
       DisablePort Nothing ->
-        (model, getMidiAccess)  -- rescan ports in case of raice
+        ( model, getMidiAccess )  -- rescan ports in case of raice
 
       OnChange (id, action) ->
         case action of
           "connected" ->
-            (model, getMidiAccess)
+            ( { model |
+                inputs = updatePorts id (\p -> {p | stale = False }) model.inputs
+              , outputs = updatePorts id (\p -> {p | stale = False }) model.outputs
+              }
+            , ( model.inputs
+                |> List.filter (\p -> p.id == id)
+                |> List.map (\prt -> if prt.stale
+                                     then enableInput prt.id
+                                     else Effects.none) )
+              ++ ( model.outputs
+                   |> List.filter (\p -> p.id == id)
+                   |> List.map (\prt -> if prt.stale && prt.connected
+                                        then enableOutput prt.id model.channel model.system
+                                        else Effects.none) )
+              |> Effects.batch
+            )
           "disconnected" ->
-            ( {model |
-               inputs = updatePorts id (\p -> {p | stale = True }) model.inputs
+            ( { model |
+                inputs = updatePorts id (\p -> {p | stale = True }) model.inputs
               , outputs = updatePorts id (\p -> {p | stale = True }) model.outputs
               }
             , Effects.none
@@ -253,7 +264,7 @@ outputDeviceList address ports =
             ]
             []
           , label
-            [  ]
+            (if prt.stale then [ style ["text-decoration" => "line-through"] ] else [])
             [ text prt.dev.name ]
           ]
       cssVisibility = if List.isEmpty ports then "hidden" else "visible"
@@ -264,9 +275,6 @@ outputDeviceList address ports =
     ]
       [ h3 [] [text "Outputs"]
       , div [ class "view" ]
-        -- [
-        --  span [] [text "Hello, how are you?!"]
-        -- ]
         (List.map (item) ports)
       ]
 

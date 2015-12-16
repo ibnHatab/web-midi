@@ -134,10 +134,8 @@ midiEvents =
                       (t, NoteOff  ch p v) ->
                         Piano (Piano.PithOff [pitch p])
                       otherwise ->
-                        NoOp
-             )
-  WebMidi.channel
-
+                          NoOp
+             ) WebMidi.channel
 
 -- Multiplexed output
 midiOut : Signal.Mailbox (List ChannelMessage)
@@ -156,7 +154,6 @@ port sysOutPort = sysOut.signal
 
 
 
-
 -- VIEW
 (=>) : a -> b -> ( a, b )
 (=>) = (,)
@@ -165,7 +162,7 @@ view : Signal.Address Action -> Model -> Html.Html
 view address model =
   div [ style [ "display" => "flex", "flex-wrap" => "wrap" ] ]
       [ MidiConnector.view (Signal.forwardTo address Connector) model.midiConnector
-      , Piano.view (Signal.forwardTo address Piano) model.piano
+--       , Piano.view (Signal.forwardTo address Piano) model.piano
       ]
 
 -- APP
