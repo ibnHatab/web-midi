@@ -2,6 +2,7 @@
 import Html exposing (Html, text)
 import Task exposing (Task, andThen, succeed)
 
+import Graphics.Element exposing (show)
 import WebMidi exposing (..)
 import MidiEvent exposing (..)
 import Music exposing (..)
@@ -29,5 +30,6 @@ port midiAccess =
            `andThen` \id   -> WebMidi.enableOutput id midiOut.signal sysOut.signal
            `andThen` \p -> Signal.send midiOut.address [encodeChannelEvent (0, c4on)]
 
-main : Html
-main = text "Play C4"
+--main : Html
+-- main = text "Play C4"
+main = show (lastMidiUsed 42)

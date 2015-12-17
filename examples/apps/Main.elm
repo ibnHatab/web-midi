@@ -162,7 +162,7 @@ view : Signal.Address Action -> Model -> Html.Html
 view address model =
   div [ style [ "display" => "flex", "flex-wrap" => "wrap" ] ]
       [ MidiConnector.view (Signal.forwardTo address Connector) model.midiConnector
---       , Piano.view (Signal.forwardTo address Piano) model.piano
+      , Piano.view (Signal.forwardTo address Piano) model.piano
       ]
 
 -- APP

@@ -230,6 +230,7 @@ whiteKey address pressed p lbl left =
                else []))
   , onMouseDown address (MouseOn p)
   , onMouseUp address (MouseOff p)
+  , onMouseLeave address (MouseOff p)
   ]
   [ div
     [ class "label" ]
@@ -251,6 +252,7 @@ blackKey address pressed p lbl left =
                else []))
   , onMouseDown address (MouseOn p)
   , onMouseUp address (MouseOff p)
+  , onMouseLeave address (MouseOff p)
   ]
   [ div
     [ class "label" ]

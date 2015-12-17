@@ -112,6 +112,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         dev.send(message);
                     });
 
+                    localStorage.setItem('last-midi-output', port.name)
                 return callback(Task.succeed(port.id))
             },
             function(error) {
@@ -140,6 +141,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         }
                     }
 
+                    localStorage.setItem('last-midi-input', port.name)
                     return callback(Task.succeed(port.id));
                 },
                 function(error) {
@@ -209,6 +211,17 @@ Elm.Native.WebMidi.make = function(localRuntime) {
         return makeSystemMessage(eventId, data, e.target.id);
     }
 
+    function lastMidiUsed() {
+        output = localStorage.getItem('last-midi-output')
+        input = localStorage.getItem('last-midi-input')
+        console.log(">> input")
+        console.log(input)
+        return Tuple2(
+            input ? input : 'none',
+            output ? output : 'none'
+        );
+    }
+
     // SIGNALS
 
     var getCurrentTime = Task.asyncFunction(function(callback) {
@@ -229,6 +242,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
         channel: channelIn,
         system: systemIn,
         jiffy: getCurrentTime,
-        onChange: onChange
+        onChange: onChange,
+        lastMidiUsed: lastMidiUsed
     };
 };

@@ -12955,6 +12955,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         dev.send(message);
                     });
 
+                    localStorage.setItem('last-midi-output', port.name)
                 return callback(Task.succeed(port.id))
             },
             function(error) {
@@ -12983,6 +12984,7 @@ Elm.Native.WebMidi.make = function(localRuntime) {
                         }
                     }
 
+                    localStorage.setItem('last-midi-input', port.name)
                     return callback(Task.succeed(port.id));
                 },
                 function(error) {
@@ -13052,6 +13054,17 @@ Elm.Native.WebMidi.make = function(localRuntime) {
         return makeSystemMessage(eventId, data, e.target.id);
     }
 
+    function lastMidiUsed() {
+        output = localStorage.getItem('last-midi-output')
+        input = localStorage.getItem('last-midi-input')
+        console.log(">> input")
+        console.log(input)
+        return Tuple2(
+            input ? input : 'none',
+            output ? output : 'none'
+        );
+    }
+
     // SIGNALS
 
     var getCurrentTime = Task.asyncFunction(function(callback) {
@@ -13072,7 +13085,8 @@ Elm.Native.WebMidi.make = function(localRuntime) {
         channel: channelIn,
         system: systemIn,
         jiffy: getCurrentTime,
-        onChange: onChange
+        onChange: onChange,
+        lastMidiUsed: lastMidiUsed
     };
 };
 
@@ -13093,6 +13107,7 @@ Elm.WebMidi.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
+   var lastMidiUsed = $Native$WebMidi.lastMidiUsed;
    var onChange = $Native$WebMidi.onChange;
    var system = $Native$WebMidi.system;
    var channel = $Native$WebMidi.channel;
@@ -13149,7 +13164,8 @@ Elm.WebMidi.make = function (_elm) {
                                 ,jiffy: jiffy
                                 ,channel: channel
                                 ,system: system
-                                ,onChange: onChange};
+                                ,onChange: onChange
+                                ,lastMidiUsed: lastMidiUsed};
 };
 Elm.MidiEvent = Elm.MidiEvent || {};
 Elm.MidiEvent.make = function (_elm) {
@@ -14407,7 +14423,8 @@ Elm.Piano.make = function (_elm) {
                                 "background-color",
                                 "rgb(255, 0, 0)")]) : _U.list([])))
               ,A2($Html$Events.onMouseDown,address,MouseOn(p))
-              ,A2($Html$Events.onMouseUp,address,MouseOff(p))]),
+              ,A2($Html$Events.onMouseUp,address,MouseOff(p))
+              ,A2($Html$Events.onMouseLeave,address,MouseOff(p))]),
       _U.list([A2($Html.div,
       _U.list([$Html$Attributes.$class("label")]),
       _U.list([$Html.text(lbl)
@@ -14432,7 +14449,8 @@ Elm.Piano.make = function (_elm) {
                                 "background-color",
                                 "rgb(255, 0, 0)")]) : _U.list([])))
               ,A2($Html$Events.onMouseDown,address,MouseOn(p))
-              ,A2($Html$Events.onMouseUp,address,MouseOff(p))]),
+              ,A2($Html$Events.onMouseUp,address,MouseOff(p))
+              ,A2($Html$Events.onMouseLeave,address,MouseOff(p))]),
       _U.list([A2($Html.div,
       _U.list([$Html$Attributes.$class("label")]),
       _U.list([$Html.text(lbl)
@@ -14901,43 +14919,73 @@ Elm.MidiConnector.make = function (_elm) {
                         ,_0: _U.update(model,{error: $Maybe.Just("Midi not supported")})
                         ,_1: $Effects.none};
               } else {
-                 var _p3 = _p2._0._0;
+                 var _p5 = _p2._0._0;
+                 var markConnected = F2(function (name,ps) {
+                    return A2($List.map,
+                    function (p) {
+                       return _U.eq(p.dev.name,name) ? _U.update(p,
+                       {connected: true}) : p;
+                    },
+                    ps);
+                 });
+                 var _p3 = $WebMidi.lastMidiUsed(42);
+                 var lastIn = _p3._0;
+                 var lastOut = _p3._1;
+                 var inputs = A2(markConnected,
+                 lastIn,
+                 A3(mergePorts,In,model.inputs,_p5.inputs));
+                 var outputs = A2(markConnected,
+                 lastOut,
+                 A3(mergePorts,In,model.outputs,_p5.outputs));
+                 var fx = A2($Basics._op["++"],
+                 A2($List.map,
+                 function (_p4) {
+                    return enableInput(function (_) {    return _.id;}(_p4));
+                 },
+                 A2($List.filter,function (_) {    return _.connected;},inputs)),
+                 A2($List.map,
+                 function (p) {
+                    return A3(enableOutput,p.id,model.channel,model.system);
+                 },
+                 A2($List.filter,
+                 function (_) {
+                    return _.connected;
+                 },
+                 outputs)));
                  return {ctor: "_Tuple2"
-                        ,_0: _U.update(model,
-                        {inputs: A3(mergePorts,In,model.inputs,_p3.inputs)
-                        ,outputs: A3(mergePorts,In,model.outputs,_p3.outputs)})
-                        ,_1: $Effects.none};
+                        ,_0: _U.update(model,{inputs: inputs,outputs: outputs})
+                        ,_1: $Effects.batch(fx)};
               }
-         case "ConnectInput": var _p4 = _p2._0;
+         case "ConnectInput": var _p6 = _p2._0;
            return {ctor: "_Tuple2"
                   ,_0: _U.update(model,
                   {inputs: A3(updatePorts,
-                  _p4.id,
+                  _p6.id,
                   function (p) {
                      return _U.update(p,{connected: true});
                   },
                   model.inputs)})
-                  ,_1: $Basics.not(_p4.stale) ? enableInput(_p4.id) : $Effects.none};
-         case "ConnectAllInputs": var _p6 = _p2._0;
+                  ,_1: $Basics.not(_p6.stale) ? enableInput(_p6.id) : $Effects.none};
+         case "ConnectAllInputs": var _p8 = _p2._0;
            return {ctor: "_Tuple2"
                   ,_0: model
                   ,_1: $Effects.batch(A2($List.map,
-                  _p6 ? enableInput : disablePort,
+                  _p8 ? enableInput : disablePort,
                   A2($List.map,
                   function (_) {
                      return _.id;
                   },
                   A2($List.map,
                   function (p) {
-                     return _U.update(p,{connected: _p6});
+                     return _U.update(p,{connected: _p8});
                   },
                   A2($List.filter,
-                  function (_p5) {
+                  function (_p7) {
                      return A2(F2(function (x,y) {    return !_U.eq(x,y);}),
-                     _p6,
+                     _p8,
                      function (_) {
                         return _.connected;
-                     }(_p5));
+                     }(_p7));
                   },
                   model.inputs)))))};
          case "EnableInput": if (_p2._0.ctor === "Just") {
@@ -14950,17 +14998,17 @@ Elm.MidiConnector.make = function (_elm) {
                         {error: $Maybe.Just("Problem accessing input device!")})
                         ,_1: $Effects.none};
               }
-         case "ConnectOutput": var _p7 = _p2._0;
+         case "ConnectOutput": var _p9 = _p2._0;
            return {ctor: "_Tuple2"
                   ,_0: _U.update(model,
                   {outputs: A2($List.map,
                   function (p) {
-                     return _U.update(p,{connected: _U.eq(p,_p7)});
+                     return _U.update(p,{connected: _U.eq(p,_p9)});
                   },
                   model.outputs)})
                   ,_1: $Effects.batch(A2($List._op["::"],
-                  $Basics.not(_p7.stale) ? A3(enableOutput,
-                  _p7.id,
+                  $Basics.not(_p9.stale) ? A3(enableOutput,
+                  _p9.id,
                   model.channel,
                   model.system) : $Effects.none,
                   A2($List.map,
@@ -14984,22 +15032,22 @@ Elm.MidiConnector.make = function (_elm) {
                         {error: $Maybe.Just("Problem accessing output device!")})
                         ,_1: getMidiAccess};
               }
-         case "Disconnect": var _p8 = _p2._0;
+         case "Disconnect": var _p10 = _p2._0;
            return {ctor: "_Tuple2"
                   ,_0: _U.update(model,
                   {inputs: A3(updatePorts,
-                  _p8.id,
+                  _p10.id,
                   function (p) {
                      return _U.update(p,{connected: false});
                   },
                   model.inputs)
                   ,outputs: A3(updatePorts,
-                  _p8.id,
+                  _p10.id,
                   function (p) {
                      return _U.update(p,{connected: false});
                   },
                   model.outputs)})
-                  ,_1: disablePort(_p8.id)};
+                  ,_1: disablePort(_p10.id)};
          case "DisablePort": if (_p2._0.ctor === "Just") {
                  return {ctor: "_Tuple2"
                         ,_0: _U.update(model,{error: $Maybe.Nothing})
@@ -15007,55 +15055,63 @@ Elm.MidiConnector.make = function (_elm) {
               } else {
                  return {ctor: "_Tuple2",_0: model,_1: getMidiAccess};
               }
-         default: var _p10 = _p2._0._0;
-           var _p9 = _p2._0._1;
-           switch (_p9)
-           {case "connected": return {ctor: "_Tuple2"
-                                     ,_0: _U.update(model,
-                                     {inputs: A3(updatePorts,
-                                     _p10,
-                                     function (p) {
-                                        return _U.update(p,{stale: false});
-                                     },
-                                     model.inputs)
-                                     ,outputs: A3(updatePorts,
-                                     _p10,
-                                     function (p) {
-                                        return _U.update(p,{stale: false});
-                                     },
-                                     model.outputs)})
-                                     ,_1: $Effects.batch(A2($Basics._op["++"],
-                                     A2($List.map,
-                                     function (prt) {
-                                        return prt.stale ? enableInput(prt.id) : $Effects.none;
-                                     },
-                                     A2($List.filter,
-                                     function (p) {
-                                        return _U.eq(p.id,_p10);
-                                     },
-                                     model.inputs)),
-                                     A2($List.map,
-                                     function (prt) {
-                                        return prt.stale && prt.connected ? A3(enableOutput,
-                                        prt.id,
-                                        model.channel,
-                                        model.system) : $Effects.none;
-                                     },
-                                     A2($List.filter,
-                                     function (p) {
-                                        return _U.eq(p.id,_p10);
-                                     },
-                                     model.outputs))))};
+         default: var _p12 = _p2._0._0;
+           var _p11 = _p2._0._1;
+           switch (_p11)
+           {case "connected": return A2($List.any,
+                function (p) {
+                   return _U.eq(p.id,_p12);
+                },
+                A2($Basics._op["++"],
+                model.inputs,
+                model.outputs)) ? {ctor: "_Tuple2"
+                                  ,_0: _U.update(model,
+                                  {inputs: A3(updatePorts,
+                                  _p12,
+                                  function (p) {
+                                     return _U.update(p,{stale: false});
+                                  },
+                                  model.inputs)
+                                  ,outputs: A3(updatePorts,
+                                  _p12,
+                                  function (p) {
+                                     return _U.update(p,{stale: false});
+                                  },
+                                  model.outputs)})
+                                  ,_1: $Effects.batch(A2($Basics._op["++"],
+                                  A2($List.map,
+                                  function (prt) {
+                                     return prt.stale ? enableInput(prt.id) : $Effects.none;
+                                  },
+                                  A2($List.filter,
+                                  function (p) {
+                                     return _U.eq(p.id,_p12);
+                                  },
+                                  model.inputs)),
+                                  A2($List.map,
+                                  function (prt) {
+                                     return prt.stale && prt.connected ? A3(enableOutput,
+                                     prt.id,
+                                     model.channel,
+                                     model.system) : $Effects.none;
+                                  },
+                                  A2($List.filter,
+                                  function (p) {
+                                     return _U.eq(p.id,_p12);
+                                  },
+                                  model.outputs))))} : {ctor: "_Tuple2"
+                                                       ,_0: model
+                                                       ,_1: getMidiAccess};
               case "disconnected": return {ctor: "_Tuple2"
                                           ,_0: _U.update(model,
                                           {inputs: A3(updatePorts,
-                                          _p10,
+                                          _p12,
                                           function (p) {
                                              return _U.update(p,{stale: true});
                                           },
                                           model.inputs)
                                           ,outputs: A3(updatePorts,
-                                          _p10,
+                                          _p12,
                                           function (p) {
                                              return _U.update(p,{stale: true});
                                           },
@@ -15188,8 +15244,11 @@ Elm.Main.make = function (_elm) {
                                               "flex")
                                               ,A2(_op["=>"],"flex-wrap","wrap")]))]),
       _U.list([A2($MidiConnector.view,
-      A2($Signal.forwardTo,address,Connector),
-      model.midiConnector)]));
+              A2($Signal.forwardTo,address,Connector),
+              model.midiConnector)
+              ,A2($Piano.view,
+              A2($Signal.forwardTo,address,Piano),
+              model.piano)]));
    });
    var pianoKeyMap = $Piano.defaultMap0;
    var pianoKeyToPitch = $Piano.expandKeyMap(pianoKeyMap);

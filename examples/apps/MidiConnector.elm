@@ -74,7 +74,7 @@ type Action
 mergePorts : Dir -> List Port -> Dict ID MIDIPort -> List Port
 mergePorts dir old added =
   let stale = List.map (\prt -> if Dict.member prt.id added then { prt | stale = False }
-                               else { prt | stale = True })
+                                else { prt | stale = True })
               old
       new = Dict.foldr (\id prt prts ->
                           if List.any (((==) id) << .id) old then prts
@@ -95,11 +95,25 @@ update action model =
         ({model | error = (Just "Midi not supported") }, Effects.none)
 
       NewMidiAccess (Just midiAccess) ->
-        ( { model |
+        let (lastIn, lastOut) = lastMidiUsed 42
+            markConnected name ps =
+              List.map (\p -> if p.dev.name == name
+                              then {p | connected = True}  else p) ps
+
             inputs = mergePorts In model.inputs midiAccess.inputs
-          , outputs = mergePorts In model.outputs midiAccess.outputs
+                    |> markConnected lastIn
+
+            outputs = mergePorts In model.outputs midiAccess.outputs
+                    |> markConnected lastOut
+
+            fx = ( List.filter .connected inputs |> List.map (enableInput << .id))
+                 ++
+                 (List.filter .connected outputs
+                    |> List.map (\p -> enableOutput p.id model.channel model.system))
+        in
+        ( { model | inputs = inputs, outputs = outputs
           }
-        , Effects.none
+        , Effects.batch fx
         )
 
       -- Handle INPUT devices; connect any or all
@@ -155,11 +169,13 @@ update action model =
         ( { model | error = Nothing}, Effects.none )
 
       DisablePort Nothing ->
-        ( model, getMidiAccess )  -- rescan ports in case of raice
+        ( model, getMidiAccess )  -- rescan ports in case of raise
 
       OnChange (id, action) ->
         case action of
           "connected" ->
+            if List.any (\p -> p.id == id) (model.inputs ++ model.outputs)
+            then
             ( { model |
                 inputs = updatePorts id (\p -> {p | stale = False }) model.inputs
               , outputs = updatePorts id (\p -> {p | stale = False }) model.outputs
@@ -176,6 +192,8 @@ update action model =
                                         else Effects.none) )
               |> Effects.batch
             )
+          else
+            (model, getMidiAccess )
           "disconnected" ->
             ( { model |
                 inputs = updatePorts id (\p -> {p | stale = True }) model.inputs

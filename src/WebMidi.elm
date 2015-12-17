@@ -12,7 +12,7 @@ order to enable developers to build powerful MIDI software on top..
 
 # Wiring MIDI I/O devices with runtime signals.
 
-@docs enableInput, enableOutput, close, ID, selectInstrument
+@docs enableInput, enableOutput, close, ID, selectInstrument, lastMidiUsed
 
 # Sends a MIDI message to the specified device(s) at the specified
   timestamp.
@@ -139,6 +139,10 @@ onChange : Signal (ID, String)
 onChange =
   Native.WebMidi.onChange
 
+{-| Get last used midi in/out device names from localStorage-}
+lastMidiUsed : Int -> (String, String)
+lastMidiUsed =
+  Native.WebMidi.lastMidiUsed
 
 {-
 playNote : Address ChannelMessage -> ChannelMessage
