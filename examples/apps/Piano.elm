@@ -138,21 +138,17 @@ keyName p = case p of
 
 -- UPDATE
 type Action
-  = None
+  = NoOp
   | PithOn  (List Pitch)
   | PithOff (List Pitch)
   | MouseOn Pitch
   | MouseOff Pitch
   | TimeRef Float
-  | NoOp
-
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
     case action  |> Debug.log "act_piano"
     of
-      None ->
-        (model, Effects.none)
       PithOn pitches ->
         ( { model | pressedKeys = pitches ++ model.pressedKeys }
         , sendToMidi NoteOn model.modiOutput pitches

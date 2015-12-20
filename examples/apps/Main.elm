@@ -1,4 +1,9 @@
 
+import Char exposing (KeyCode, toUpper)
+import Set exposing (Set, map)
+import Keyboard exposing (..)
+import Dict exposing (..)
+
 import Effects exposing (Effects, map, batch, Never)
 import Html exposing (..)
 import Html.Attributes exposing (style)
@@ -8,23 +13,22 @@ import Task
 import WebMidi exposing (..)
 import MidiEvent exposing (..)
 
-import Piano exposing (Action, view, init)
 import Music exposing (..)
-import MidiConnector exposing (Action, view, init)
 
-import Char exposing (KeyCode, toUpper)
-import Set exposing (Set, map)
-import Keyboard exposing (..)
-import Dict exposing (..)
+import Piano exposing (Action, view, init)
+import MidiConnector exposing (Action, view, init)
+import IntervalAnimation exposing (Action, view, init)
+
 
 -- import Debug
 
 -- MODEL
 type alias Model =
   {
-    midiConnector: MidiConnector.Model
-  , piano : Piano.Model
-  , keyCodes : Set KeyCode
+    midiConnector : MidiConnector.Model
+  , piano         : Piano.Model
+  , intervals     : IntervalAnimation.Model
+  , keyCodes      : Set KeyCode
   }
 
 pianoKeyMap : Piano.PianoKeyMap
@@ -35,11 +39,13 @@ init =
   let
     (connector, connectorFx) = MidiConnector.init midiOut.signal sysOut.signal
     (piano, pianoFx) = Piano.init 2 5 (Just pianoKeyMap) midiOut.address
+    (intervals, intervalsFx) = IntervalAnimation.init 2 5
   in
-    ( Model connector piano Set.empty
+    ( Model connector piano intervals Set.empty
     , Effects.batch
                [ Effects.map Connector connectorFx
                , Effects.map Piano pianoFx
+               , Effects.map IntervalAnimation intervalsFx
                ]
     )
 
@@ -48,6 +54,7 @@ type Action
   = Connector MidiConnector.Action
   | Piano Piano.Action
   | Keyboard (Set KeyCode)
+  | IntervalAnimation IntervalAnimation.Action
   | NoOp
 
 update : Action -> Model -> (Model, Effects Action)
@@ -67,6 +74,13 @@ update message model =
       in
         ( {model | piano = piano}
         , Effects.map Piano fx
+        )
+    IntervalAnimation act ->
+      let
+        (intervals, fx) = IntervalAnimation.update act model.intervals
+      in
+        ( {model | intervals = intervals}
+        , Effects.map IntervalAnimation fx
         )
     Keyboard keyCodes ->
       let
@@ -162,7 +176,13 @@ view : Signal.Address Action -> Model -> Html.Html
 view address model =
   div [ style [ "display" => "flex", "flex-wrap" => "wrap" ] ]
       [ MidiConnector.view (Signal.forwardTo address Connector) model.midiConnector
-      , Piano.view (Signal.forwardTo address Piano) model.piano
+      , div [ style [ "flex-wrap" => "wrap" ] ]
+            [
+             IntervalAnimation.view (Signal.forwardTo address IntervalAnimation)
+                               model.intervals
+            , Piano.view (Signal.forwardTo address Piano) model.piano
+            ]
+
       ]
 
 -- APP
@@ -178,7 +198,6 @@ app =
 main : Signal Html
 main =
   app.html
-
 
 port tasks : Signal (Task.Task Never ())
 port tasks =

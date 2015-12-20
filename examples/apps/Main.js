@@ -10124,6 +10124,283 @@ Elm.Native.Regex.make = function(localRuntime) {
 	};
 };
 
+Elm.Random = Elm.Random || {};
+Elm.Random.make = function (_elm) {
+   "use strict";
+   _elm.Random = _elm.Random || {};
+   if (_elm.Random.values) return _elm.Random.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $List = Elm.List.make(_elm);
+   var _op = {};
+   var magicNum8 = 2147483562;
+   var range = function (_p0) {
+      return {ctor: "_Tuple2",_0: 0,_1: magicNum8};
+   };
+   var magicNum7 = 2137383399;
+   var magicNum6 = 2147483563;
+   var magicNum5 = 3791;
+   var magicNum4 = 40692;
+   var magicNum3 = 52774;
+   var magicNum2 = 12211;
+   var magicNum1 = 53668;
+   var magicNum0 = 40014;
+   var generate = F2(function (_p1,seed) {
+      var _p2 = _p1;
+      return _p2._0(seed);
+   });
+   var Seed = function (a) {    return {ctor: "Seed",_0: a};};
+   var State = F2(function (a,b) {
+      return {ctor: "State",_0: a,_1: b};
+   });
+   var initState = function (s$) {
+      var s = A2($Basics.max,s$,0 - s$);
+      var q = s / (magicNum6 - 1) | 0;
+      var s2 = A2($Basics._op["%"],q,magicNum7 - 1);
+      var s1 = A2($Basics._op["%"],s,magicNum6 - 1);
+      return A2(State,s1 + 1,s2 + 1);
+   };
+   var next = function (_p3) {
+      var _p4 = _p3;
+      var _p6 = _p4._1;
+      var _p5 = _p4._0;
+      var k$ = _p6 / magicNum3 | 0;
+      var s2$ = magicNum4 * (_p6 - k$ * magicNum3) - k$ * magicNum5;
+      var s2$$ = _U.cmp(s2$,0) < 0 ? s2$ + magicNum7 : s2$;
+      var k = _p5 / magicNum1 | 0;
+      var s1$ = magicNum0 * (_p5 - k * magicNum1) - k * magicNum2;
+      var s1$$ = _U.cmp(s1$,0) < 0 ? s1$ + magicNum6 : s1$;
+      var z = s1$$ - s2$$;
+      var z$ = _U.cmp(z,1) < 0 ? z + magicNum8 : z;
+      return {ctor: "_Tuple2",_0: z$,_1: A2(State,s1$$,s2$$)};
+   };
+   var split = function (_p7) {
+      var _p8 = _p7;
+      var _p11 = _p8._1;
+      var _p10 = _p8._0;
+      var _p9 = $Basics.snd(next(_p8));
+      var t1 = _p9._0;
+      var t2 = _p9._1;
+      var new_s2 = _U.eq(_p11,1) ? magicNum7 - 1 : _p11 - 1;
+      var new_s1 = _U.eq(_p10,magicNum6 - 1) ? 1 : _p10 + 1;
+      return {ctor: "_Tuple2"
+             ,_0: A2(State,new_s1,t2)
+             ,_1: A2(State,t1,new_s2)};
+   };
+   var initialSeed = function (n) {
+      return Seed({state: initState(n)
+                  ,next: next
+                  ,split: split
+                  ,range: range});
+   };
+   var Generator = function (a) {
+      return {ctor: "Generator",_0: a};
+   };
+   var andThen = F2(function (_p12,callback) {
+      var _p13 = _p12;
+      return Generator(function (seed) {
+         var _p14 = _p13._0(seed);
+         var result = _p14._0;
+         var newSeed = _p14._1;
+         var _p15 = callback(result);
+         var genB = _p15._0;
+         return genB(newSeed);
+      });
+   });
+   var map5 = F6(function (func,_p20,_p19,_p18,_p17,_p16) {
+      var _p21 = _p20;
+      var _p22 = _p19;
+      var _p23 = _p18;
+      var _p24 = _p17;
+      var _p25 = _p16;
+      return Generator(function (seed0) {
+         var _p26 = _p21._0(seed0);
+         var a = _p26._0;
+         var seed1 = _p26._1;
+         var _p27 = _p22._0(seed1);
+         var b = _p27._0;
+         var seed2 = _p27._1;
+         var _p28 = _p23._0(seed2);
+         var c = _p28._0;
+         var seed3 = _p28._1;
+         var _p29 = _p24._0(seed3);
+         var d = _p29._0;
+         var seed4 = _p29._1;
+         var _p30 = _p25._0(seed4);
+         var e = _p30._0;
+         var seed5 = _p30._1;
+         return {ctor: "_Tuple2",_0: A5(func,a,b,c,d,e),_1: seed5};
+      });
+   });
+   var map4 = F5(function (func,_p34,_p33,_p32,_p31) {
+      var _p35 = _p34;
+      var _p36 = _p33;
+      var _p37 = _p32;
+      var _p38 = _p31;
+      return Generator(function (seed0) {
+         var _p39 = _p35._0(seed0);
+         var a = _p39._0;
+         var seed1 = _p39._1;
+         var _p40 = _p36._0(seed1);
+         var b = _p40._0;
+         var seed2 = _p40._1;
+         var _p41 = _p37._0(seed2);
+         var c = _p41._0;
+         var seed3 = _p41._1;
+         var _p42 = _p38._0(seed3);
+         var d = _p42._0;
+         var seed4 = _p42._1;
+         return {ctor: "_Tuple2",_0: A4(func,a,b,c,d),_1: seed4};
+      });
+   });
+   var map3 = F4(function (func,_p45,_p44,_p43) {
+      var _p46 = _p45;
+      var _p47 = _p44;
+      var _p48 = _p43;
+      return Generator(function (seed0) {
+         var _p49 = _p46._0(seed0);
+         var a = _p49._0;
+         var seed1 = _p49._1;
+         var _p50 = _p47._0(seed1);
+         var b = _p50._0;
+         var seed2 = _p50._1;
+         var _p51 = _p48._0(seed2);
+         var c = _p51._0;
+         var seed3 = _p51._1;
+         return {ctor: "_Tuple2",_0: A3(func,a,b,c),_1: seed3};
+      });
+   });
+   var map2 = F3(function (func,_p53,_p52) {
+      var _p54 = _p53;
+      var _p55 = _p52;
+      return Generator(function (seed0) {
+         var _p56 = _p54._0(seed0);
+         var a = _p56._0;
+         var seed1 = _p56._1;
+         var _p57 = _p55._0(seed1);
+         var b = _p57._0;
+         var seed2 = _p57._1;
+         return {ctor: "_Tuple2",_0: A2(func,a,b),_1: seed2};
+      });
+   });
+   var map = F2(function (func,_p58) {
+      var _p59 = _p58;
+      return Generator(function (seed0) {
+         var _p60 = _p59._0(seed0);
+         var a = _p60._0;
+         var seed1 = _p60._1;
+         return {ctor: "_Tuple2",_0: func(a),_1: seed1};
+      });
+   });
+   var listHelp = F4(function (list,n,generate,seed) {
+      listHelp: while (true) if (_U.cmp(n,1) < 0)
+      return {ctor: "_Tuple2",_0: $List.reverse(list),_1: seed};
+      else {
+            var _p61 = generate(seed);
+            var value = _p61._0;
+            var newSeed = _p61._1;
+            var _v19 = A2($List._op["::"],value,list),
+            _v20 = n - 1,
+            _v21 = generate,
+            _v22 = newSeed;
+            list = _v19;
+            n = _v20;
+            generate = _v21;
+            seed = _v22;
+            continue listHelp;
+         }
+   });
+   var list = F2(function (n,_p62) {
+      var _p63 = _p62;
+      return Generator(function (seed) {
+         return A4(listHelp,_U.list([]),n,_p63._0,seed);
+      });
+   });
+   var pair = F2(function (genA,genB) {
+      return A3(map2,
+      F2(function (v0,v1) {
+         return {ctor: "_Tuple2",_0: v0,_1: v1};
+      }),
+      genA,
+      genB);
+   });
+   var minInt = -2147483648;
+   var maxInt = 2147483647;
+   var iLogBase = F2(function (b,i) {
+      return _U.cmp(i,b) < 0 ? 1 : 1 + A2(iLogBase,b,i / b | 0);
+   });
+   var $int = F2(function (a,b) {
+      return Generator(function (_p64) {
+         var _p65 = _p64;
+         var _p70 = _p65._0;
+         var base = 2147483561;
+         var f = F3(function (n,acc,state) {
+            f: while (true) {
+               var _p66 = n;
+               if (_p66 === 0) {
+                     return {ctor: "_Tuple2",_0: acc,_1: state};
+                  } else {
+                     var _p67 = _p70.next(state);
+                     var x = _p67._0;
+                     var state$ = _p67._1;
+                     var _v26 = n - 1,_v27 = x + acc * base,_v28 = state$;
+                     n = _v26;
+                     acc = _v27;
+                     state = _v28;
+                     continue f;
+                  }
+            }
+         });
+         var _p68 = _U.cmp(a,b) < 0 ? {ctor: "_Tuple2"
+                                      ,_0: a
+                                      ,_1: b} : {ctor: "_Tuple2",_0: b,_1: a};
+         var lo = _p68._0;
+         var hi = _p68._1;
+         var k = hi - lo + 1;
+         var n = A2(iLogBase,base,k);
+         var _p69 = A3(f,n,1,_p70.state);
+         var v = _p69._0;
+         var state$ = _p69._1;
+         return {ctor: "_Tuple2"
+                ,_0: lo + A2($Basics._op["%"],v,k)
+                ,_1: Seed(_U.update(_p70,{state: state$}))};
+      });
+   });
+   var $float = F2(function (a,b) {
+      return Generator(function (seed) {
+         var _p71 = A2(generate,A2($int,minInt,maxInt),seed);
+         var number = _p71._0;
+         var newSeed = _p71._1;
+         var negativeOneToOne = $Basics.toFloat(number) / $Basics.toFloat(maxInt - minInt);
+         var _p72 = _U.cmp(a,b) < 0 ? {ctor: "_Tuple2"
+                                      ,_0: a
+                                      ,_1: b} : {ctor: "_Tuple2",_0: b,_1: a};
+         var lo = _p72._0;
+         var hi = _p72._1;
+         var scaled = (lo + hi) / 2 + (hi - lo) * negativeOneToOne;
+         return {ctor: "_Tuple2",_0: scaled,_1: newSeed};
+      });
+   });
+   var bool = A2(map,
+   F2(function (x,y) {    return _U.eq(x,y);})(1),
+   A2($int,0,1));
+   return _elm.Random.values = {_op: _op
+                               ,bool: bool
+                               ,$int: $int
+                               ,$float: $float
+                               ,list: list
+                               ,pair: pair
+                               ,map: map
+                               ,map2: map2
+                               ,map3: map3
+                               ,map4: map4
+                               ,map5: map5
+                               ,andThen: andThen
+                               ,minInt: minInt
+                               ,maxInt: maxInt
+                               ,generate: generate
+                               ,initialSeed: initialSeed};
+};
 Elm.Regex = Elm.Regex || {};
 Elm.Regex.make = function (_elm) {
    "use strict";
@@ -12841,337 +13118,11 @@ Elm.StartApp.make = function (_elm) {
                                  ,Config: Config
                                  ,App: App};
 };
-Elm.Native.WebMidi = {};
-Elm.Native.WebMidi.make = function(localRuntime) {
-
-    localRuntime.Native = localRuntime.Native || {};
-    localRuntime.Native.WebMidi = localRuntime.Native.WebMidi || {};
-
-    if (localRuntime.Native.WebMidi.values)
-    {
-	return localRuntime.Native.WebMidi.values;
-    }
-
-    var Dict = Elm.Dict.make(localRuntime);
-    var Task = Elm.Native.Task.make(localRuntime);
-    var Signal = Elm.Native.Signal.make(localRuntime);
-    var Port = Elm.Native.Port.make(localRuntime);
-    var Tuple2 = Elm.Native.Utils.make(localRuntime).Tuple2;
-    var List = Elm.List.make(localRuntime);
-
-    // global MIDIAccess object
-    var midi = null;
-
-    function requestMIDIAccess (settings) {
-        return Task.asyncFunction(function(callback) {
-
-            if (! ("requestMIDIAccess" in navigator)) {
-                console.error('No Web MIDI support')
-                return callback(Task.fail(new Error('No Web MIDI support')));
-            }
-
-            function onMIDISuccess (midiAccess) {
-                midi = midiAccess;
-
-                var elmMidiAccess =  {
-                    _ : {},
-                    inputs: Dict.empty,
-                    outputs: Dict.empty,
-                    sysexEnabled: midiAccess.sysexEnabled
-                }
-
-                midiAccess.inputs.forEach(function(port){
-                    var value = { _ : {},
-                                  name: port.name,
-                                  manufacturer:  port.manufacturer,
-                                  version: port.version };
-                    elmMidiAccess.inputs =
-                        A3(Dict.insert, port.id, value, elmMidiAccess.inputs);
-                });
-
-                midiAccess.outputs.forEach(function(port){
-                    var value = { _ : {},
-                                  name: port.name,
-                                  manufacturer:  port.manufacturer,
-                                  version: port.version };
-                    elmMidiAccess.outputs =
-                        A3(Dict.insert, port.id, value, elmMidiAccess.outputs);
-                });
-
-                midiAccess.onstatechange = function(event) {
-                    console.log(event)
-                    console.log([event.port.connection, event.port.state])
-                    localRuntime.notify(onChange.id, Tuple2(event.port.id, event.port.state));
-                }
-
-                return callback(Task.succeed(elmMidiAccess))
-            }
-
-            navigator.requestMIDIAccess({
-                sysex: settings.sysex
-            }).then(onMIDISuccess, function(error) {
-		return callback(Task.fail(new Error('No Web MIDI support')));
-	    });
-        })};
-
-
-    function enableOutput (id, channelSignal, sytemSignal) {
-        return Task.asyncFunction(function(callback) {
-            var dev = midi.outputs.get(id);
-
-            if (! dev) {
-                return callback(Task.fail(new Error("No such device found")));
-            }
-
-            dev.open().then(
-                function(port) {
-                    var midiOut = Port.outboundSignal("midiOut-" + channelSignal.name,
-                                                      function (v) { return v; },
-                                                      channelSignal);
-
-                    var midiOutSignal = localRuntime.ports["midiOut-" + channelSignal.name];
-
-                    midiOutSignal.subscribe(function(es) {
-                        while (es.ctor !== '[]') {
-                            var e = es._0;
-                            var status = (e.command << 4) + (e.channel - 1)
-                            var message = [status, e.data1];
-                            if (e.data2 >= 0) { message.push(e.data2); }
-                            port.send(message, e.timestamp);
-			    es = es._1;
-                        }
-                    });
-
-                    var sysOut = Port.outboundSignal("sysOut-" + sytemSignal.name,
-                                                     function (v) { return v; },
-                                                     sytemSignal);
-
-                    var sysOutSignal = localRuntime.ports["sysOut-" + sytemSignal.name];
-
-                    sysOutSignal.subscribe(function(e) {
-                        var message = [e.event];
-                        if (e.data >= 0) { message.push(e.data); }
-                        var dev = midi.outputs.get(e.device);
-                        dev.send(message);
-                    });
-
-                    localStorage.setItem('last-midi-output', port.name)
-                return callback(Task.succeed(port.id))
-            },
-            function(error) {
-                return callback(Task.fail(error))
-            } );
-        });
-    }
-
-    function enableInput (id) {
-        return Task.asyncFunction(function(callback) {
-            var dev = midi.inputs.get(id);
-
-            if (! dev) {
-                return callback(Task.fail(new Error("No such device found")));
-            }
-
-            dev.open().then(
-                function(port) {
-                    port.onmidimessage = function(event) {
-                        if (event.data[0] < 240) {      // device and channel-specific message
-                            var elmEvent = handleChannelEvent(event);
-                            localRuntime.notify(channelIn.id, elmEvent);
-                        } else if (e.data[0] <= 255) {  // system message
-                            var elmEvent = handleSystemEvent(event);
-                            localRuntime.notify(systemIn.id, elmEvent);
-                        }
-                    }
-
-                    localStorage.setItem('last-midi-input', port.name)
-                    return callback(Task.succeed(port.id));
-                },
-                function(error) {
-                    return callback(Task.fail(error));
-                } );
-        });
-    }
-
-
-    function close (id) {
-        return Task.asyncFunction(function(callback) {
-            var dev = midi.inputs.get(id) || midi.outputs.get(id);
-
-            if (! dev) {
-                return callback(Task.fail(new Error("No such device found")));
-            }
-
-            dev.close().then(
-                function(port) {
-                    if(port.type === "input") {
-                        port.onmidimessage = null;
-                    }
-                    return callback(Task.succeed(port.id))
-                },
-                function(error) {
-                    return callback(Task.fail(error))
-                });
-        });
-    }
-
-    // EVENT HANDLERS
-
-    function makeChannelMessage(a, b, c, d, e) {
-        return {_: {}
-                 ,command: a
-                 ,data1: b
-                 ,data2: c
-                 ,channel: d
-                 ,timestamp: d
-               };
-    }
-
-    function makeSystemMessage(a, b, c) {
-        return {_: {}
-                , data: c
-                ,device: b
-                ,event: a};
-    }
-
-    function handleChannelEvent(e) {
-        var command = e.data[0] >> 4;
-        var channel = (e.data[0] & 0xf) + 1;
-        var data1 = 0, data2 = 0;
-
-        if (e.data.length > 1) {
-            data1 = e.data[1];
-            data2 = e.data.length > 2 ? e.data[2] : -1;
-        }
-
-        return makeChannelMessage(command, data1, data2, channel, e.receivedTime);
-    }
-
-    function handleSystemEvent(e) {
-        var eventId = e.data[0];
-        var data = e.data[1]
-
-        return makeSystemMessage(eventId, data, e.target.id);
-    }
-
-    function lastMidiUsed() {
-        output = localStorage.getItem('last-midi-output')
-        input = localStorage.getItem('last-midi-input')
-        console.log(">> input")
-        console.log(input)
-        return Tuple2(
-            input ? input : 'none',
-            output ? output : 'none'
-        );
-    }
-
-    // SIGNALS
-
-    var getCurrentTime = Task.asyncFunction(function(callback) {
-	return callback(Task.succeed(performance.now()));
-    });
-
-    var channelIn = Signal.input('WebMidi.channel', makeChannelMessage(0,0,0,0,0));
-
-    var systemIn = Signal.input('WebMidi.system', makeSystemMessage(0,0,0));
-
-    var onChange = Signal.input('WebMidi.onChange', "");
-
-    return localRuntime.Native.WebMidi.values = {
-        requestMIDIAccess: requestMIDIAccess,
-        enableOutput: F3(enableOutput),
-        enableInput: enableInput,
-        close: close,
-        channel: channelIn,
-        system: systemIn,
-        jiffy: getCurrentTime,
-        onChange: onChange,
-        lastMidiUsed: lastMidiUsed
-    };
-};
-
-Elm.WebMidi = Elm.WebMidi || {};
-Elm.WebMidi.make = function (_elm) {
+Elm.Animation = Elm.Animation || {};
+Elm.Animation.make = function (_elm) {
    "use strict";
-   _elm.WebMidi = _elm.WebMidi || {};
-   if (_elm.WebMidi.values) return _elm.WebMidi.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $Dict = Elm.Dict.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Native$WebMidi = Elm.Native.WebMidi.make(_elm),
-   $Regex = Elm.Regex.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm),
-   $Task = Elm.Task.make(_elm);
-   var _op = {};
-   var lastMidiUsed = $Native$WebMidi.lastMidiUsed;
-   var onChange = $Native$WebMidi.onChange;
-   var system = $Native$WebMidi.system;
-   var channel = $Native$WebMidi.channel;
-   var jiffy = $Native$WebMidi.jiffy;
-   var selectInstrument = F2(function (name,instruments) {
-      var ids = A3($Dict.foldr,
-      F3(function (key,val,keyList) {
-         return A2($Regex.contains,
-         $Regex.regex(name),
-         val.name) ? A2($List._op["::"],key,keyList) : keyList;
-      }),
-      _U.list([]),
-      instruments);
-      return $List.head(ids);
-   });
-   var close = $Native$WebMidi.close;
-   var enableInput = $Native$WebMidi.enableInput;
-   var enableOutput = $Native$WebMidi.enableOutput;
-   var requestMIDIAccess = $Native$WebMidi.requestMIDIAccess;
-   var defaultSettings = {sysex: false};
-   var Settings = function (a) {    return {sysex: a};};
-   var SystemMessage = F3(function (a,b,c) {
-      return {event: a,device: b,data: c};
-   });
-   var initSystemMsg = A3(SystemMessage,0,"",0);
-   var ChannelMessage = F5(function (a,b,c,d,e) {
-      return {command: a
-             ,data1: b
-             ,data2: c
-             ,channel: d
-             ,timestamp: e};
-   });
-   var initChannelMsg = A5(ChannelMessage,0,0,0,0,0);
-   var MIDIAccess = F3(function (a,b,c) {
-      return {inputs: a,outputs: b,sysexEnabled: c};
-   });
-   var MIDIPort = F3(function (a,b,c) {
-      return {name: a,manufacturer: b,version: c};
-   });
-   return _elm.WebMidi.values = {_op: _op
-                                ,MIDIPort: MIDIPort
-                                ,MIDIAccess: MIDIAccess
-                                ,ChannelMessage: ChannelMessage
-                                ,initChannelMsg: initChannelMsg
-                                ,SystemMessage: SystemMessage
-                                ,initSystemMsg: initSystemMsg
-                                ,Settings: Settings
-                                ,defaultSettings: defaultSettings
-                                ,requestMIDIAccess: requestMIDIAccess
-                                ,enableOutput: enableOutput
-                                ,enableInput: enableInput
-                                ,close: close
-                                ,selectInstrument: selectInstrument
-                                ,jiffy: jiffy
-                                ,channel: channel
-                                ,system: system
-                                ,onChange: onChange
-                                ,lastMidiUsed: lastMidiUsed};
-};
-Elm.MidiEvent = Elm.MidiEvent || {};
-Elm.MidiEvent.make = function (_elm) {
-   "use strict";
-   _elm.MidiEvent = _elm.MidiEvent || {};
-   if (_elm.MidiEvent.values) return _elm.MidiEvent.values;
+   _elm.Animation = _elm.Animation || {};
+   if (_elm.Animation.values) return _elm.Animation.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
@@ -13179,339 +13130,264 @@ Elm.MidiEvent.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
-   $WebMidi = Elm.WebMidi.make(_elm);
+   $Time = Elm.Time.make(_elm);
    var _op = {};
-   var systemMessages = {sysex: 240
-                        ,timecode: 241
-                        ,songposition: 242
-                        ,songselect: 243
-                        ,tuningrequest: 246
-                        ,sysexend: 247
-                        ,clock: 248
-                        ,start: 250
-                        ,$continue: 251
-                        ,stop: 252
-                        ,activesensing: 254
-                        ,reset: 255
-                        ,unknownsystemmessage: -1};
-   var encodeSystemEvent = function (event) {
-      var _p0 = event;
-      switch (_p0.ctor)
-      {case "Sysex": return A3($WebMidi.SystemMessage,
-           systemMessages.sysex,
-           _p0._0,
-           -1);
-         case "Timecode": return A3($WebMidi.SystemMessage,
-           systemMessages.timecode,
-           _p0._0,
-           -1);
-         case "Songposition": return A3($WebMidi.SystemMessage,
-           systemMessages.songposition,
-           _p0._0,
-           _p0._1);
-         case "Songselect": return A3($WebMidi.SystemMessage,
-           systemMessages.songselect,
-           _p0._0,
-           _p0._1);
-         case "Tuningrequest": return A3($WebMidi.SystemMessage,
-           systemMessages.tuningrequest,
-           _p0._0,
-           -1);
-         case "Sysexend": return A3($WebMidi.SystemMessage,
-           systemMessages.sysexend,
-           _p0._0,
-           -1);
-         case "Clock": return A3($WebMidi.SystemMessage,
-           systemMessages.clock,
-           _p0._0,
-           -1);
-         case "Start": return A3($WebMidi.SystemMessage,
-           systemMessages.start,
-           _p0._0,
-           -1);
-         case "Continue": return A3($WebMidi.SystemMessage,
-           systemMessages.$continue,
-           _p0._0,
-           -1);
-         case "Stop": return A3($WebMidi.SystemMessage,
-           systemMessages.stop,
-           _p0._0,
-           -1);
-         case "Activesensing": return A3($WebMidi.SystemMessage,
-           systemMessages.activesensing,
-           _p0._0,
-           -1);
-         case "Reset": return A3($WebMidi.SystemMessage,
-           systemMessages.reset,
-           _p0._0,
-           -1);
-         default: return A3($WebMidi.SystemMessage,
-           systemMessages.unknownsystemmessage,
-           "",
-           -1);}
-   };
-   var channelMessages = {noteoff: 8
-                         ,noteon: 9
-                         ,keyaftertouch: 10
-                         ,controlchange: 11
-                         ,channelmode: 11
-                         ,programchange: 12
-                         ,channelaftertouch: 13
-                         ,pitchbend: 14};
-   var encodeChannelEvent = function (_p1) {
-      var _p2 = _p1;
-      var msgAt = function () {
-         var _p3 = _p2._1;
-         switch (_p3.ctor)
-         {case "NoteOff": return A4($WebMidi.ChannelMessage,
-              channelMessages.noteoff,
-              _p3._1,
-              _p3._2,
-              _p3._0);
-            case "NoteOn": return A4($WebMidi.ChannelMessage,
-              channelMessages.noteon,
-              _p3._1,
-              _p3._2,
-              _p3._0);
-            case "PolyAfter": return A4($WebMidi.ChannelMessage,
-              channelMessages.keyaftertouch,
-              _p3._2,
-              -1,
-              _p3._0);
-            case "ProgChange": return A4($WebMidi.ChannelMessage,
-              channelMessages.programchange,
-              _p3._1,
-              -1,
-              _p3._0);
-            case "Control": return A4($WebMidi.ChannelMessage,
-              channelMessages.controlchange,
-              _p3._1,
-              _p3._2,
-              _p3._0);
-            case "PitchBend": var _p4 = _p3._1;
-              return A4($WebMidi.ChannelMessage,
-              channelMessages.pitchbend,
-              A2($Basics.rem,_p4 - 8192,128),
-              A2($Basics.rem,_p4,128),
-              _p3._0);
-            case "MonoAfter": return A4($WebMidi.ChannelMessage,
-              channelMessages.channelaftertouch,
-              _p3._1,
-              -1,
-              _p3._0);
-            case "Mode": return A4($WebMidi.ChannelMessage,
-              channelMessages.channelmode,
-              _p3._1,
-              _p3._2,
-              _p3._0);
-            default: return A4($WebMidi.ChannelMessage,0,0,0,0);}
-      }();
-      return msgAt(_p2._0);
-   };
-   var SequencerSpecific = F2(function (a,b) {
-      return {ctor: "SequencerSpecific",_0: a,_1: b};
+   var isScheduled = F2(function (t,_p0) {
+      var _p1 = _p0;
+      return _U.cmp(t,_p1._0.start + _p1._0.delay) < 1;
    });
-   var TimeSig = F4(function (a,b,c,d) {
-      return {ctor: "TimeSig",_0: a,_1: b,_2: c,_3: d};
-   });
-   var SMPTEOffset = F5(function (a,b,c,d,e) {
-      return {ctor: "SMPTEOffset",_0: a,_1: b,_2: c,_3: d,_4: e};
-   });
-   var SetTempo = function (a) {
-      return {ctor: "SetTempo",_0: a};
+   var getTo = function (_p2) {
+      var _p3 = _p2;
+      return _p3._0.to;
    };
-   var EndOfTrack = {ctor: "EndOfTrack"};
-   var CuePoint = function (a) {
-      return {ctor: "CuePoint",_0: a};
+   var getFrom = function (_p4) {
+      var _p5 = _p4;
+      return _p5._0.from;
    };
-   var Marker = function (a) {    return {ctor: "Marker",_0: a};};
-   var Lyric = function (a) {    return {ctor: "Lyric",_0: a};};
-   var InstrName = function (a) {
-      return {ctor: "InstrName",_0: a};
+   var getEase = function (_p6) {
+      var _p7 = _p6;
+      return _p7._0.ease;
    };
-   var TrackName = function (a) {
-      return {ctor: "TrackName",_0: a};
+   var getDelay = function (_p8) {
+      var _p9 = _p8;
+      return _p9._0.delay;
    };
-   var Copyright = function (a) {
-      return {ctor: "Copyright",_0: a};
-   };
-   var TextEvent = function (a) {
-      return {ctor: "TextEvent",_0: a};
-   };
-   var SequenceNum = function (a) {
-      return {ctor: "SequenceNum",_0: a};
-   };
-   var UnknownSysEv = function (a) {
-      return {ctor: "UnknownSysEv",_0: a};
-   };
-   var Reset = function (a) {    return {ctor: "Reset",_0: a};};
-   var Activesensing = function (a) {
-      return {ctor: "Activesensing",_0: a};
-   };
-   var Stop = function (a) {    return {ctor: "Stop",_0: a};};
-   var Continue = function (a) {
-      return {ctor: "Continue",_0: a};
-   };
-   var Start = function (a) {    return {ctor: "Start",_0: a};};
-   var Clock = function (a) {    return {ctor: "Clock",_0: a};};
-   var Sysexend = function (a) {
-      return {ctor: "Sysexend",_0: a};
-   };
-   var Tuningrequest = function (a) {
-      return {ctor: "Tuningrequest",_0: a};
-   };
-   var Songselect = F2(function (a,b) {
-      return {ctor: "Songselect",_0: a,_1: b};
-   });
-   var Songposition = F2(function (a,b) {
-      return {ctor: "Songposition",_0: a,_1: b};
-   });
-   var Timecode = function (a) {
-      return {ctor: "Timecode",_0: a};
-   };
-   var Sysex = function (a) {    return {ctor: "Sysex",_0: a};};
-   var decodeSystemEvent = function (_p5) {
-      var _p6 = _p5;
-      var _p9 = _p6.event;
-      var _p8 = _p6.device;
-      var _p7 = _p6.data;
-      return _U.eq(_p9,systemMessages.sysex) ? Sysex(_p8) : _U.eq(_p9,
-      systemMessages.timecode) ? Timecode(_p8) : _U.eq(_p9,
-      systemMessages.songposition) ? A2(Songposition,
-      _p8,
-      _p7) : _U.eq(_p9,systemMessages.songselect) ? A2(Songselect,
-      _p8,
-      _p7) : _U.eq(_p9,
-      systemMessages.tuningrequest) ? Tuningrequest(_p8) : _U.eq(_p9,
-      systemMessages.sysexend) ? Sysexend(_p8) : _U.eq(_p9,
-      systemMessages.clock) ? Clock(_p8) : _U.eq(_p9,
-      systemMessages.start) ? Start(_p8) : _U.eq(_p9,
-      systemMessages.$continue) ? Continue(_p8) : _U.eq(_p9,
-      systemMessages.stop) ? Stop(_p8) : _U.eq(_p9,
-      systemMessages.activesensing) ? Activesensing(_p8) : _U.eq(_p9,
-      systemMessages.reset) ? Reset(_p8) : UnknownSysEv(A2($Basics._op["++"],
-      "Event: ",
-      A2($Basics._op["++"],
-      $Basics.toString(_p9),
-      A2($Basics._op["++"]," on: ",_p8))));
-   };
-   var UnknownChEv = function (a) {
-      return {ctor: "UnknownChEv",_0: a};
-   };
-   var Mode = F3(function (a,b,c) {
-      return {ctor: "Mode",_0: a,_1: b,_2: c};
-   });
-   var MonoAfter = F2(function (a,b) {
-      return {ctor: "MonoAfter",_0: a,_1: b};
-   });
-   var PitchBend = F2(function (a,b) {
-      return {ctor: "PitchBend",_0: a,_1: b};
-   });
-   var Control = F3(function (a,b,c) {
-      return {ctor: "Control",_0: a,_1: b,_2: c};
-   });
-   var ProgChange = F2(function (a,b) {
-      return {ctor: "ProgChange",_0: a,_1: b};
-   });
-   var PolyAfter = F3(function (a,b,c) {
-      return {ctor: "PolyAfter",_0: a,_1: b,_2: c};
-   });
-   var NoteOn = F3(function (a,b,c) {
-      return {ctor: "NoteOn",_0: a,_1: b,_2: c};
-   });
-   var NoteOff = F3(function (a,b,c) {
-      return {ctor: "NoteOff",_0: a,_1: b,_2: c};
-   });
-   var decodeChannelEvent = function (_p10) {
+   var getStart = function (_p10) {
       var _p11 = _p10;
-      var _p15 = _p11.data2;
-      var _p14 = _p11.data1;
-      var _p13 = _p11.command;
-      var _p12 = _p11.channel;
-      var channelEvent = _U.eq(_p13,
-      channelMessages.noteoff) || _U.eq(_p13,
-      channelMessages.noteon) && _U.eq(_p15,0) ? A3(NoteOff,
-      _p12,
-      _p14,
-      A2($Basics.rem,_p15,127)) : _U.eq(_p13,
-      channelMessages.noteon) ? A3(NoteOn,
-      _p12,
-      _p14,
-      A2($Basics.rem,_p15,127)) : _U.eq(_p13,
-      channelMessages.keyaftertouch) ? A3(PolyAfter,
-      _p12,
-      _p14,
-      A2($Basics.rem,_p15,127)) : _U.eq(_p13,
-      channelMessages.controlchange) && (_U.cmp(_p14,
-      0) > -1 && _U.cmp(_p14,119) < 1) ? A3(Control,
-      _p12,
-      _p14,
-      _p15) : _U.eq(_p13,channelMessages.channelmode) && (_U.cmp(_p14,
-      120) > -1 && _U.cmp(_p14,127) < 1) ? A3(Mode,
-      _p12,
-      _p14,
-      _p15) : _U.eq(_p13,
-      channelMessages.programchange) ? A2(ProgChange,
-      _p12,
-      _p14) : _U.eq(_p13,
-      channelMessages.channelaftertouch) ? A2(MonoAfter,
-      _p12,
-      A2($Basics.rem,_p14,127)) : _U.eq(_p13,
-      channelMessages.pitchbend) ? A2(PitchBend,
-      _p12,
-      A2($Basics.rem,
-      _p15 * 128 + _p14 - 8192,
-      8192)) : UnknownChEv($Basics.toString(_p13));
-      return {ctor: "_Tuple2",_0: _p11.timestamp,_1: channelEvent};
+      return _p11._0.start;
    };
-   var Ticks = function (a) {    return {ctor: "Ticks",_0: a};};
-   var MidiFile = F2(function (a,b) {
-      return {ctor: "MidiFile",_0: a,_1: b};
+   var timeElapsed = F2(function (t,_p12) {
+      var _p13 = _p12;
+      return A2($Basics.max,0,t - (_p13._0.start + _p13._0.delay));
    });
-   return _elm.MidiEvent.values = {_op: _op
-                                  ,MidiFile: MidiFile
-                                  ,Ticks: Ticks
-                                  ,NoteOff: NoteOff
-                                  ,NoteOn: NoteOn
-                                  ,PolyAfter: PolyAfter
-                                  ,ProgChange: ProgChange
-                                  ,Control: Control
-                                  ,PitchBend: PitchBend
-                                  ,MonoAfter: MonoAfter
-                                  ,Mode: Mode
-                                  ,UnknownChEv: UnknownChEv
-                                  ,Sysex: Sysex
-                                  ,Timecode: Timecode
-                                  ,Songposition: Songposition
-                                  ,Songselect: Songselect
-                                  ,Tuningrequest: Tuningrequest
-                                  ,Sysexend: Sysexend
-                                  ,Clock: Clock
-                                  ,Start: Start
-                                  ,Continue: Continue
-                                  ,Stop: Stop
-                                  ,Activesensing: Activesensing
-                                  ,Reset: Reset
-                                  ,UnknownSysEv: UnknownSysEv
-                                  ,SequenceNum: SequenceNum
-                                  ,TextEvent: TextEvent
-                                  ,Copyright: Copyright
-                                  ,TrackName: TrackName
-                                  ,InstrName: InstrName
-                                  ,Lyric: Lyric
-                                  ,Marker: Marker
-                                  ,CuePoint: CuePoint
-                                  ,EndOfTrack: EndOfTrack
-                                  ,SetTempo: SetTempo
-                                  ,SMPTEOffset: SMPTEOffset
-                                  ,TimeSig: TimeSig
-                                  ,SequencerSpecific: SequencerSpecific
-                                  ,channelMessages: channelMessages
-                                  ,decodeChannelEvent: decodeChannelEvent
-                                  ,encodeChannelEvent: encodeChannelEvent
-                                  ,systemMessages: systemMessages
-                                  ,decodeSystemEvent: decodeSystemEvent
-                                  ,encodeSystemEvent: encodeSystemEvent};
+   var defaultEase = function (x) {
+      return (1 - $Basics.cos($Basics.pi * x)) / 2;
+   };
+   var spd = F3(function (dos,from,to) {
+      var _p14 = dos;
+      if (_p14.ctor === "Duration") {
+            return $Basics.abs(to - from) / _p14._0;
+         } else {
+            return _p14._0;
+         }
+   });
+   var getSpeed = function (_p15) {
+      var _p16 = _p15;
+      return A3(spd,_p16._0.dos,_p16._0.from,_p16._0.to);
+   };
+   var dur = F3(function (dos,from,to) {
+      var _p17 = dos;
+      if (_p17.ctor === "Duration") {
+            return _p17._0;
+         } else {
+            return $Basics.abs(to - from) / _p17._0;
+         }
+   });
+   var animate = F2(function (t,_p18) {
+      var _p19 = _p18;
+      var _p23 = _p19._0.to;
+      var _p22 = _p19._0.start;
+      var _p21 = _p19._0.from;
+      var duration = A3(dur,_p19._0.dos,_p21,_p23);
+      var fr = A3($Basics.clamp,
+      0,
+      1,
+      (t - _p22 - _p19._0.delay) / duration);
+      var eased = _p19._0.ease(fr);
+      var correction = function () {
+         var _p20 = _p19._0.ramp;
+         if (_p20.ctor === "Nothing") {
+               return 0;
+            } else {
+               var from$ = _p20._0 * (t - _p22);
+               var eased$ = defaultEase(fr);
+               return from$ - from$ * eased$;
+            }
+      }();
+      return _p21 + (_p23 - _p21) * eased + correction;
+   });
+   var velocity = F2(function (t,u) {
+      var forwDiff = A2(animate,t + 10,u);
+      var backDiff = A2(animate,t - 10,u);
+      return (forwDiff - backDiff) / 20;
+   });
+   var timeRemaining = F2(function (t,_p24) {
+      var _p25 = _p24;
+      var duration = A3(dur,_p25._0.dos,_p25._0.from,_p25._0.to);
+      return A2($Basics.max,
+      0,
+      _p25._0.start + _p25._0.delay + duration - t);
+   });
+   var getDuration = function (_p26) {
+      var _p27 = _p26;
+      return A3(dur,_p27._0.dos,_p27._0.from,_p27._0.to);
+   };
+   var equals = F2(function (_p29,_p28) {
+      var _p30 = _p29;
+      var _p33 = _p30._0;
+      var _p31 = _p28;
+      var _p32 = _p31._0;
+      return _U.eq(_p33.start + _p33.delay,
+      _p32.start + _p32.delay) && (_U.eq(_p33.from,
+      _p32.from) && (_U.eq(_p33.to,_p32.to) && (_U.eq(_p33.ramp,
+      _p32.ramp) && ((_U.eq(_p33.dos,_p32.dos) || _U.cmp(1.0e-3,
+      $Basics.abs(A3(dur,_p33.dos,_p33.from,_p33.to) - A3(dur,
+      _p32.dos,
+      _p32.from,
+      _p32.to))) > -1) && A2($List.all,
+      function (t) {
+         return _U.eq(_p33.ease(t),_p32.ease(t));
+      },
+      _U.list([0.1,0.3,0.7,0.9]))))));
+   });
+   var isRunning = F2(function (t,_p34) {
+      var _p35 = _p34;
+      var _p37 = _p35._0.start;
+      var _p36 = _p35._0.delay;
+      var duration = A3(dur,_p35._0.dos,_p35._0.from,_p35._0.to);
+      return _U.cmp(t,_p37 + _p36) > 0 && _U.cmp(t,
+      _p37 + _p36 + duration) < 0;
+   });
+   var isDone = F2(function (t,_p38) {
+      var _p39 = _p38;
+      var duration = A3(dur,_p39._0.dos,_p39._0.from,_p39._0.to);
+      return _U.cmp(t,_p39._0.start + _p39._0.delay + duration) > -1;
+   });
+   var A = function (a) {    return {ctor: "A",_0: a};};
+   var undo = F2(function (t,_p40) {
+      var _p41 = _p40;
+      var _p42 = _p41._0;
+      return A(_U.update(_p42,
+      {from: _p42.to
+      ,to: _p42.from
+      ,start: t
+      ,delay: 0 - A2(timeRemaining,t,_p41)
+      ,ramp: $Maybe.Nothing
+      ,ease: function (t) {
+         return 1 - _p42.ease(1 - t);
+      }}));
+   });
+   var delay = F2(function (x,_p43) {
+      var _p44 = _p43;
+      return A(_U.update(_p44._0,{delay: x}));
+   });
+   var ease = F2(function (x,_p45) {
+      var _p46 = _p45;
+      return A(_U.update(_p46._0,{ease: x}));
+   });
+   var from = F2(function (x,_p47) {
+      var _p48 = _p47;
+      return A(_U.update(_p48._0,{from: x,ramp: $Maybe.Nothing}));
+   });
+   var to = F2(function (x,_p49) {
+      var _p50 = _p49;
+      return A(_U.update(_p50._0,{to: x,ramp: $Maybe.Nothing}));
+   });
+   var AnimRecord = F7(function (a,b,c,d,e,f,g) {
+      return {start: a
+             ,delay: b
+             ,dos: c
+             ,ramp: d
+             ,ease: e
+             ,from: f
+             ,to: g};
+   });
+   var Speed = function (a) {    return {ctor: "Speed",_0: a};};
+   var speed = F2(function (x,_p51) {
+      var _p52 = _p51;
+      return A(_U.update(_p52._0,{dos: Speed($Basics.abs(x))}));
+   });
+   var Duration = function (a) {
+      return {ctor: "Duration",_0: a};
+   };
+   var defaultDuration = Duration(750 * $Time.millisecond);
+   var animation = function (t) {
+      return A(A7(AnimRecord,
+      t,
+      0,
+      defaultDuration,
+      $Maybe.Nothing,
+      defaultEase,
+      0,
+      1));
+   };
+   var retarget = F3(function (t,newTo,_p53) {
+      var _p54 = _p53;
+      var _p57 = _p54;
+      var _p56 = _p54._0;
+      if (_U.eq(newTo,_p56.to)) return _p57; else if (_U.eq(_p56.from,
+         _p56.to)) return A(_U.update(_p56,
+            {start: t
+            ,to: newTo
+            ,dos: defaultDuration
+            ,ramp: $Maybe.Nothing})); else if (A2(isScheduled,t,_p57))
+            return A(_U.update(_p56,{to: newTo,ramp: $Maybe.Nothing}));
+            else if (A2(isDone,t,_p57)) return A(_U.update(_p56,
+                  {start: t
+                  ,delay: 0
+                  ,from: _p56.to
+                  ,to: newTo
+                  ,ramp: $Maybe.Nothing})); else {
+                     var newSpeed = function () {
+                        var _p55 = _p56.dos;
+                        if (_p55.ctor === "Speed") {
+                              return _p56.dos;
+                           } else {
+                              return Speed(A3(spd,_p56.dos,_p56.from,_p56.to));
+                           }
+                     }();
+                     var pos = A2(animate,t,_p57);
+                     var vel = A2(velocity,t,_p57);
+                     return A(A7(AnimRecord,
+                     t,
+                     0,
+                     newSpeed,
+                     $Maybe.Just(vel),
+                     _p56.ease,
+                     pos,
+                     newTo));
+                  }
+   });
+   var $static = function (x) {
+      return A(A7(AnimRecord,
+      0,
+      0,
+      Duration(0),
+      $Maybe.Nothing,
+      defaultEase,
+      x,
+      x));
+   };
+   var duration = F2(function (x,_p58) {
+      var _p59 = _p58;
+      return A(_U.update(_p59._0,{dos: Duration(x)}));
+   });
+   return _elm.Animation.values = {_op: _op
+                                  ,animation: animation
+                                  ,$static: $static
+                                  ,animate: animate
+                                  ,duration: duration
+                                  ,speed: speed
+                                  ,delay: delay
+                                  ,ease: ease
+                                  ,from: from
+                                  ,to: to
+                                  ,undo: undo
+                                  ,retarget: retarget
+                                  ,getStart: getStart
+                                  ,getDuration: getDuration
+                                  ,getSpeed: getSpeed
+                                  ,getDelay: getDelay
+                                  ,getEase: getEase
+                                  ,getFrom: getFrom
+                                  ,getTo: getTo
+                                  ,equals: equals
+                                  ,velocity: velocity
+                                  ,timeElapsed: timeElapsed
+                                  ,timeRemaining: timeRemaining
+                                  ,isScheduled: isScheduled
+                                  ,isRunning: isRunning
+                                  ,isDone: isDone};
 };
 Elm.Music = Elm.Music || {};
 Elm.Music.make = function (_elm) {
@@ -14297,6 +14173,796 @@ Elm.Music.make = function (_elm) {
                               ,dur: dur
                               ,instrumentToInt: instrumentToInt};
 };
+Elm.IntervalAnimation = Elm.IntervalAnimation || {};
+Elm.IntervalAnimation.make = function (_elm) {
+   "use strict";
+   _elm.IntervalAnimation = _elm.IntervalAnimation || {};
+   if (_elm.IntervalAnimation.values)
+   return _elm.IntervalAnimation.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Animation = Elm.Animation.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Color = Elm.Color.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Effects = Elm.Effects.make(_elm),
+   $Graphics$Element = Elm.Graphics.Element.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Music = Elm.Music.make(_elm),
+   $Random = Elm.Random.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Time = Elm.Time.make(_elm);
+   var _op = {};
+   var render1 = function (x) {
+      return A2($Graphics$Element.flow,
+      $Graphics$Element.down,
+      _U.list([A2($Graphics$Element.spacer,1,10)
+              ,A2($Graphics$Element.flow,
+              $Graphics$Element.right,
+              _U.list([A2($Graphics$Element.color,
+                      $Color.gray,
+                      A2($Graphics$Element.spacer,x,30))
+                      ,A2($Graphics$Element.color,
+                      $Color.red,
+                      A2($Graphics$Element.spacer,_U.eq(x,0) ? 0 : 1,30))]))]));
+   };
+   var render = F2(function (anims,t) {
+      return A2($Graphics$Element.flow,
+      $Graphics$Element.right,
+      _U.list([A2($Graphics$Element.spacer,40,1)
+              ,A2($Graphics$Element.flow,
+              $Graphics$Element.down,
+              A2($List.map,
+              function (_p0) {
+                 return render1($Basics.round(A2($Animation.animate,t,_p0)));
+              },
+              anims))]));
+   });
+   _op["=>"] = F2(function (v0,v1) {
+      return {ctor: "_Tuple2",_0: v0,_1: v1};
+   });
+   var view = F2(function (address,model) {
+      return A2($Html.div,
+      _U.list([$Html$Attributes.style(_U.list([A2(_op["=>"],
+      "width",
+      "200px")]))]),
+      _U.list([A2($Html.h2,
+              _U.list([]),
+              _U.list([$Html.text("Interval Animation")]))
+              ,$Html.fromElement(A2(render,
+              model.animations,
+              model.clockTime))]));
+   });
+   var Tick = function (a) {    return {ctor: "Tick",_0: a};};
+   var update = F2(function (action,model) {
+      var _p1 = A2($Debug.log,"act_anim",action);
+      if (_p1.ctor === "NoOp") {
+            return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+         } else {
+            var _p3 = _p1._0;
+            var _p2 = A2($Debug.log,"tick",_p3);
+            return {ctor: "_Tuple2"
+                   ,_0: _U.update(model,{clockTime: _p3})
+                   ,_1: $Effects.tick(Tick)};
+         }
+   });
+   var NoOp = {ctor: "NoOp"};
+   var data = function () {
+      var seed = $Random.initialSeed(42000);
+      var gen = A2($Random.list,20,A2($Random.$int,1,12));
+      return $Basics.fst(A2($Random.generate,gen,seed));
+   }();
+   var animations = A3($List.scanl,
+   F2(function (val,prev) {
+      return A2($Animation.delay,
+      A2($Animation.timeRemaining,0,prev),
+      A2($Animation.to,val,prev));
+   }),
+   A2($Animation.speed,0.5,$Animation.$static(0)),
+   A2($List.map,
+   function (x) {
+      return $Basics.toFloat(x) * 80;
+   },
+   data));
+   var Model = F5(function (a,b,c,d,e) {
+      return {firstOctave: a
+             ,width: b
+             ,timeRef: c
+             ,animations: d
+             ,clockTime: e};
+   });
+   var init = F2(function (oct,width) {
+      return {ctor: "_Tuple2"
+             ,_0: A5(Model,oct,width,0.0,animations,0)
+             ,_1: $Effects.tick(Tick)};
+   });
+   return _elm.IntervalAnimation.values = {_op: _op
+                                          ,Model: Model
+                                          ,init: init
+                                          ,data: data
+                                          ,animations: animations
+                                          ,NoOp: NoOp
+                                          ,Tick: Tick
+                                          ,update: update
+                                          ,view: view
+                                          ,render1: render1
+                                          ,render: render};
+};
+Elm.Native.WebMidi = {};
+Elm.Native.WebMidi.make = function(localRuntime) {
+
+    localRuntime.Native = localRuntime.Native || {};
+    localRuntime.Native.WebMidi = localRuntime.Native.WebMidi || {};
+
+    if (localRuntime.Native.WebMidi.values)
+    {
+	return localRuntime.Native.WebMidi.values;
+    }
+
+    var Dict = Elm.Dict.make(localRuntime);
+    var Task = Elm.Native.Task.make(localRuntime);
+    var Signal = Elm.Native.Signal.make(localRuntime);
+    var Port = Elm.Native.Port.make(localRuntime);
+    var Tuple2 = Elm.Native.Utils.make(localRuntime).Tuple2;
+    var List = Elm.List.make(localRuntime);
+
+    // global MIDIAccess object
+    var midi = null;
+
+    function requestMIDIAccess (settings) {
+        return Task.asyncFunction(function(callback) {
+
+            if (! ("requestMIDIAccess" in navigator)) {
+                console.error('No Web MIDI support')
+                return callback(Task.fail(new Error('No Web MIDI support')));
+            }
+
+            function onMIDISuccess (midiAccess) {
+                midi = midiAccess;
+
+                var elmMidiAccess =  {
+                    _ : {},
+                    inputs: Dict.empty,
+                    outputs: Dict.empty,
+                    sysexEnabled: midiAccess.sysexEnabled
+                }
+
+                midiAccess.inputs.forEach(function(port){
+                    var value = { _ : {},
+                                  name: port.name,
+                                  manufacturer:  port.manufacturer,
+                                  version: port.version };
+                    elmMidiAccess.inputs =
+                        A3(Dict.insert, port.id, value, elmMidiAccess.inputs);
+                });
+
+                midiAccess.outputs.forEach(function(port){
+                    var value = { _ : {},
+                                  name: port.name,
+                                  manufacturer:  port.manufacturer,
+                                  version: port.version };
+                    elmMidiAccess.outputs =
+                        A3(Dict.insert, port.id, value, elmMidiAccess.outputs);
+                });
+
+                midiAccess.onstatechange = function(event) {
+                    console.log(event)
+                    console.log([event.port.connection, event.port.state])
+                    localRuntime.notify(onChange.id, Tuple2(event.port.id, event.port.state));
+                }
+
+                return callback(Task.succeed(elmMidiAccess))
+            }
+
+            navigator.requestMIDIAccess({
+                sysex: settings.sysex
+            }).then(onMIDISuccess, function(error) {
+		return callback(Task.fail(new Error('No Web MIDI support')));
+	    });
+        })};
+
+
+    function enableOutput (id, channelSignal, sytemSignal) {
+        return Task.asyncFunction(function(callback) {
+            var dev = midi.outputs.get(id);
+
+            if (! dev) {
+                return callback(Task.fail(new Error("No such device found")));
+            }
+
+            dev.open().then(
+                function(port) {
+                    var midiOut = Port.outboundSignal("midiOut-" + channelSignal.name,
+                                                      function (v) { return v; },
+                                                      channelSignal);
+
+                    var midiOutSignal = localRuntime.ports["midiOut-" + channelSignal.name];
+
+                    midiOutSignal.subscribe(function(es) {
+                        while (es.ctor !== '[]') {
+                            var e = es._0;
+                            var status = (e.command << 4) + (e.channel - 1)
+                            var message = [status, e.data1];
+                            if (e.data2 >= 0) { message.push(e.data2); }
+                            port.send(message, e.timestamp);
+			    es = es._1;
+                        }
+                    });
+
+                    var sysOut = Port.outboundSignal("sysOut-" + sytemSignal.name,
+                                                     function (v) { return v; },
+                                                     sytemSignal);
+
+                    var sysOutSignal = localRuntime.ports["sysOut-" + sytemSignal.name];
+
+                    sysOutSignal.subscribe(function(e) {
+                        var message = [e.event];
+                        if (e.data >= 0) { message.push(e.data); }
+                        var dev = midi.outputs.get(e.device);
+                        dev.send(message);
+                    });
+
+                    localStorage.setItem('last-midi-output', port.name)
+                return callback(Task.succeed(port.id))
+            },
+            function(error) {
+                return callback(Task.fail(error))
+            } );
+        });
+    }
+
+    function enableInput (id) {
+        return Task.asyncFunction(function(callback) {
+            var dev = midi.inputs.get(id);
+
+            if (! dev) {
+                return callback(Task.fail(new Error("No such device found")));
+            }
+
+            dev.open().then(
+                function(port) {
+                    port.onmidimessage = function(event) {
+                        if (event.data[0] < 240) {      // device and channel-specific message
+                            var elmEvent = handleChannelEvent(event);
+                            localRuntime.notify(channelIn.id, elmEvent);
+                        } else if (e.data[0] <= 255) {  // system message
+                            var elmEvent = handleSystemEvent(event);
+                            localRuntime.notify(systemIn.id, elmEvent);
+                        }
+                    }
+
+                    localStorage.setItem('last-midi-input', port.name)
+                    return callback(Task.succeed(port.id));
+                },
+                function(error) {
+                    return callback(Task.fail(error));
+                } );
+        });
+    }
+
+
+    function close (id) {
+        return Task.asyncFunction(function(callback) {
+            var dev = midi.inputs.get(id) || midi.outputs.get(id);
+
+            if (! dev) {
+                return callback(Task.fail(new Error("No such device found")));
+            }
+
+            dev.close().then(
+                function(port) {
+                    if(port.type === "input") {
+                        port.onmidimessage = null;
+                    }
+                    return callback(Task.succeed(port.id))
+                },
+                function(error) {
+                    return callback(Task.fail(error))
+                });
+        });
+    }
+
+    // EVENT HANDLERS
+
+    function makeChannelMessage(a, b, c, d, e) {
+        return {_: {}
+                 ,command: a
+                 ,data1: b
+                 ,data2: c
+                 ,channel: d
+                 ,timestamp: d
+               };
+    }
+
+    function makeSystemMessage(a, b, c) {
+        return {_: {}
+                , data: c
+                ,device: b
+                ,event: a};
+    }
+
+    function handleChannelEvent(e) {
+        var command = e.data[0] >> 4;
+        var channel = (e.data[0] & 0xf) + 1;
+        var data1 = 0, data2 = 0;
+
+        if (e.data.length > 1) {
+            data1 = e.data[1];
+            data2 = e.data.length > 2 ? e.data[2] : -1;
+        }
+
+        return makeChannelMessage(command, data1, data2, channel, e.receivedTime);
+    }
+
+    function handleSystemEvent(e) {
+        var eventId = e.data[0];
+        var data = e.data[1]
+
+        return makeSystemMessage(eventId, data, e.target.id);
+    }
+
+    function lastMidiUsed() {
+        output = localStorage.getItem('last-midi-output')
+        input = localStorage.getItem('last-midi-input')
+        console.log(">> input")
+        console.log(input)
+        return Tuple2(
+            input ? input : 'none',
+            output ? output : 'none'
+        );
+    }
+
+    // SIGNALS
+
+    var getCurrentTime = Task.asyncFunction(function(callback) {
+	return callback(Task.succeed(performance.now()));
+    });
+
+    var channelIn = Signal.input('WebMidi.channel', makeChannelMessage(0,0,0,0,0));
+
+    var systemIn = Signal.input('WebMidi.system', makeSystemMessage(0,0,0));
+
+    var onChange = Signal.input('WebMidi.onChange', "");
+
+    return localRuntime.Native.WebMidi.values = {
+        requestMIDIAccess: requestMIDIAccess,
+        enableOutput: F3(enableOutput),
+        enableInput: enableInput,
+        close: close,
+        channel: channelIn,
+        system: systemIn,
+        jiffy: getCurrentTime,
+        onChange: onChange,
+        lastMidiUsed: lastMidiUsed
+    };
+};
+
+Elm.WebMidi = Elm.WebMidi || {};
+Elm.WebMidi.make = function (_elm) {
+   "use strict";
+   _elm.WebMidi = _elm.WebMidi || {};
+   if (_elm.WebMidi.values) return _elm.WebMidi.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Native$WebMidi = Elm.Native.WebMidi.make(_elm),
+   $Regex = Elm.Regex.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Task = Elm.Task.make(_elm);
+   var _op = {};
+   var lastMidiUsed = $Native$WebMidi.lastMidiUsed;
+   var onChange = $Native$WebMidi.onChange;
+   var system = $Native$WebMidi.system;
+   var channel = $Native$WebMidi.channel;
+   var jiffy = $Native$WebMidi.jiffy;
+   var selectInstrument = F2(function (name,instruments) {
+      var ids = A3($Dict.foldr,
+      F3(function (key,val,keyList) {
+         return A2($Regex.contains,
+         $Regex.regex(name),
+         val.name) ? A2($List._op["::"],key,keyList) : keyList;
+      }),
+      _U.list([]),
+      instruments);
+      return $List.head(ids);
+   });
+   var close = $Native$WebMidi.close;
+   var enableInput = $Native$WebMidi.enableInput;
+   var enableOutput = $Native$WebMidi.enableOutput;
+   var requestMIDIAccess = $Native$WebMidi.requestMIDIAccess;
+   var defaultSettings = {sysex: false};
+   var Settings = function (a) {    return {sysex: a};};
+   var SystemMessage = F3(function (a,b,c) {
+      return {event: a,device: b,data: c};
+   });
+   var initSystemMsg = A3(SystemMessage,0,"",0);
+   var ChannelMessage = F5(function (a,b,c,d,e) {
+      return {command: a
+             ,data1: b
+             ,data2: c
+             ,channel: d
+             ,timestamp: e};
+   });
+   var initChannelMsg = A5(ChannelMessage,0,0,0,0,0);
+   var MIDIAccess = F3(function (a,b,c) {
+      return {inputs: a,outputs: b,sysexEnabled: c};
+   });
+   var MIDIPort = F3(function (a,b,c) {
+      return {name: a,manufacturer: b,version: c};
+   });
+   return _elm.WebMidi.values = {_op: _op
+                                ,MIDIPort: MIDIPort
+                                ,MIDIAccess: MIDIAccess
+                                ,ChannelMessage: ChannelMessage
+                                ,initChannelMsg: initChannelMsg
+                                ,SystemMessage: SystemMessage
+                                ,initSystemMsg: initSystemMsg
+                                ,Settings: Settings
+                                ,defaultSettings: defaultSettings
+                                ,requestMIDIAccess: requestMIDIAccess
+                                ,enableOutput: enableOutput
+                                ,enableInput: enableInput
+                                ,close: close
+                                ,selectInstrument: selectInstrument
+                                ,jiffy: jiffy
+                                ,channel: channel
+                                ,system: system
+                                ,onChange: onChange
+                                ,lastMidiUsed: lastMidiUsed};
+};
+Elm.MidiEvent = Elm.MidiEvent || {};
+Elm.MidiEvent.make = function (_elm) {
+   "use strict";
+   _elm.MidiEvent = _elm.MidiEvent || {};
+   if (_elm.MidiEvent.values) return _elm.MidiEvent.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $WebMidi = Elm.WebMidi.make(_elm);
+   var _op = {};
+   var systemMessages = {sysex: 240
+                        ,timecode: 241
+                        ,songposition: 242
+                        ,songselect: 243
+                        ,tuningrequest: 246
+                        ,sysexend: 247
+                        ,clock: 248
+                        ,start: 250
+                        ,$continue: 251
+                        ,stop: 252
+                        ,activesensing: 254
+                        ,reset: 255
+                        ,unknownsystemmessage: -1};
+   var encodeSystemEvent = function (event) {
+      var _p0 = event;
+      switch (_p0.ctor)
+      {case "Sysex": return A3($WebMidi.SystemMessage,
+           systemMessages.sysex,
+           _p0._0,
+           -1);
+         case "Timecode": return A3($WebMidi.SystemMessage,
+           systemMessages.timecode,
+           _p0._0,
+           -1);
+         case "Songposition": return A3($WebMidi.SystemMessage,
+           systemMessages.songposition,
+           _p0._0,
+           _p0._1);
+         case "Songselect": return A3($WebMidi.SystemMessage,
+           systemMessages.songselect,
+           _p0._0,
+           _p0._1);
+         case "Tuningrequest": return A3($WebMidi.SystemMessage,
+           systemMessages.tuningrequest,
+           _p0._0,
+           -1);
+         case "Sysexend": return A3($WebMidi.SystemMessage,
+           systemMessages.sysexend,
+           _p0._0,
+           -1);
+         case "Clock": return A3($WebMidi.SystemMessage,
+           systemMessages.clock,
+           _p0._0,
+           -1);
+         case "Start": return A3($WebMidi.SystemMessage,
+           systemMessages.start,
+           _p0._0,
+           -1);
+         case "Continue": return A3($WebMidi.SystemMessage,
+           systemMessages.$continue,
+           _p0._0,
+           -1);
+         case "Stop": return A3($WebMidi.SystemMessage,
+           systemMessages.stop,
+           _p0._0,
+           -1);
+         case "Activesensing": return A3($WebMidi.SystemMessage,
+           systemMessages.activesensing,
+           _p0._0,
+           -1);
+         case "Reset": return A3($WebMidi.SystemMessage,
+           systemMessages.reset,
+           _p0._0,
+           -1);
+         default: return A3($WebMidi.SystemMessage,
+           systemMessages.unknownsystemmessage,
+           "",
+           -1);}
+   };
+   var channelMessages = {noteoff: 8
+                         ,noteon: 9
+                         ,keyaftertouch: 10
+                         ,controlchange: 11
+                         ,channelmode: 11
+                         ,programchange: 12
+                         ,channelaftertouch: 13
+                         ,pitchbend: 14};
+   var encodeChannelEvent = function (_p1) {
+      var _p2 = _p1;
+      var msgAt = function () {
+         var _p3 = _p2._1;
+         switch (_p3.ctor)
+         {case "NoteOff": return A4($WebMidi.ChannelMessage,
+              channelMessages.noteoff,
+              _p3._1,
+              _p3._2,
+              _p3._0);
+            case "NoteOn": return A4($WebMidi.ChannelMessage,
+              channelMessages.noteon,
+              _p3._1,
+              _p3._2,
+              _p3._0);
+            case "PolyAfter": return A4($WebMidi.ChannelMessage,
+              channelMessages.keyaftertouch,
+              _p3._2,
+              -1,
+              _p3._0);
+            case "ProgChange": return A4($WebMidi.ChannelMessage,
+              channelMessages.programchange,
+              _p3._1,
+              -1,
+              _p3._0);
+            case "Control": return A4($WebMidi.ChannelMessage,
+              channelMessages.controlchange,
+              _p3._1,
+              _p3._2,
+              _p3._0);
+            case "PitchBend": var _p4 = _p3._1;
+              return A4($WebMidi.ChannelMessage,
+              channelMessages.pitchbend,
+              A2($Basics.rem,_p4 - 8192,128),
+              A2($Basics.rem,_p4,128),
+              _p3._0);
+            case "MonoAfter": return A4($WebMidi.ChannelMessage,
+              channelMessages.channelaftertouch,
+              _p3._1,
+              -1,
+              _p3._0);
+            case "Mode": return A4($WebMidi.ChannelMessage,
+              channelMessages.channelmode,
+              _p3._1,
+              _p3._2,
+              _p3._0);
+            default: return A4($WebMidi.ChannelMessage,0,0,0,0);}
+      }();
+      return msgAt(_p2._0);
+   };
+   var SequencerSpecific = F2(function (a,b) {
+      return {ctor: "SequencerSpecific",_0: a,_1: b};
+   });
+   var TimeSig = F4(function (a,b,c,d) {
+      return {ctor: "TimeSig",_0: a,_1: b,_2: c,_3: d};
+   });
+   var SMPTEOffset = F5(function (a,b,c,d,e) {
+      return {ctor: "SMPTEOffset",_0: a,_1: b,_2: c,_3: d,_4: e};
+   });
+   var SetTempo = function (a) {
+      return {ctor: "SetTempo",_0: a};
+   };
+   var EndOfTrack = {ctor: "EndOfTrack"};
+   var CuePoint = function (a) {
+      return {ctor: "CuePoint",_0: a};
+   };
+   var Marker = function (a) {    return {ctor: "Marker",_0: a};};
+   var Lyric = function (a) {    return {ctor: "Lyric",_0: a};};
+   var InstrName = function (a) {
+      return {ctor: "InstrName",_0: a};
+   };
+   var TrackName = function (a) {
+      return {ctor: "TrackName",_0: a};
+   };
+   var Copyright = function (a) {
+      return {ctor: "Copyright",_0: a};
+   };
+   var TextEvent = function (a) {
+      return {ctor: "TextEvent",_0: a};
+   };
+   var SequenceNum = function (a) {
+      return {ctor: "SequenceNum",_0: a};
+   };
+   var UnknownSysEv = function (a) {
+      return {ctor: "UnknownSysEv",_0: a};
+   };
+   var Reset = function (a) {    return {ctor: "Reset",_0: a};};
+   var Activesensing = function (a) {
+      return {ctor: "Activesensing",_0: a};
+   };
+   var Stop = function (a) {    return {ctor: "Stop",_0: a};};
+   var Continue = function (a) {
+      return {ctor: "Continue",_0: a};
+   };
+   var Start = function (a) {    return {ctor: "Start",_0: a};};
+   var Clock = function (a) {    return {ctor: "Clock",_0: a};};
+   var Sysexend = function (a) {
+      return {ctor: "Sysexend",_0: a};
+   };
+   var Tuningrequest = function (a) {
+      return {ctor: "Tuningrequest",_0: a};
+   };
+   var Songselect = F2(function (a,b) {
+      return {ctor: "Songselect",_0: a,_1: b};
+   });
+   var Songposition = F2(function (a,b) {
+      return {ctor: "Songposition",_0: a,_1: b};
+   });
+   var Timecode = function (a) {
+      return {ctor: "Timecode",_0: a};
+   };
+   var Sysex = function (a) {    return {ctor: "Sysex",_0: a};};
+   var decodeSystemEvent = function (_p5) {
+      var _p6 = _p5;
+      var _p9 = _p6.event;
+      var _p8 = _p6.device;
+      var _p7 = _p6.data;
+      return _U.eq(_p9,systemMessages.sysex) ? Sysex(_p8) : _U.eq(_p9,
+      systemMessages.timecode) ? Timecode(_p8) : _U.eq(_p9,
+      systemMessages.songposition) ? A2(Songposition,
+      _p8,
+      _p7) : _U.eq(_p9,systemMessages.songselect) ? A2(Songselect,
+      _p8,
+      _p7) : _U.eq(_p9,
+      systemMessages.tuningrequest) ? Tuningrequest(_p8) : _U.eq(_p9,
+      systemMessages.sysexend) ? Sysexend(_p8) : _U.eq(_p9,
+      systemMessages.clock) ? Clock(_p8) : _U.eq(_p9,
+      systemMessages.start) ? Start(_p8) : _U.eq(_p9,
+      systemMessages.$continue) ? Continue(_p8) : _U.eq(_p9,
+      systemMessages.stop) ? Stop(_p8) : _U.eq(_p9,
+      systemMessages.activesensing) ? Activesensing(_p8) : _U.eq(_p9,
+      systemMessages.reset) ? Reset(_p8) : UnknownSysEv(A2($Basics._op["++"],
+      "Event: ",
+      A2($Basics._op["++"],
+      $Basics.toString(_p9),
+      A2($Basics._op["++"]," on: ",_p8))));
+   };
+   var UnknownChEv = function (a) {
+      return {ctor: "UnknownChEv",_0: a};
+   };
+   var Mode = F3(function (a,b,c) {
+      return {ctor: "Mode",_0: a,_1: b,_2: c};
+   });
+   var MonoAfter = F2(function (a,b) {
+      return {ctor: "MonoAfter",_0: a,_1: b};
+   });
+   var PitchBend = F2(function (a,b) {
+      return {ctor: "PitchBend",_0: a,_1: b};
+   });
+   var Control = F3(function (a,b,c) {
+      return {ctor: "Control",_0: a,_1: b,_2: c};
+   });
+   var ProgChange = F2(function (a,b) {
+      return {ctor: "ProgChange",_0: a,_1: b};
+   });
+   var PolyAfter = F3(function (a,b,c) {
+      return {ctor: "PolyAfter",_0: a,_1: b,_2: c};
+   });
+   var NoteOn = F3(function (a,b,c) {
+      return {ctor: "NoteOn",_0: a,_1: b,_2: c};
+   });
+   var NoteOff = F3(function (a,b,c) {
+      return {ctor: "NoteOff",_0: a,_1: b,_2: c};
+   });
+   var decodeChannelEvent = function (_p10) {
+      var _p11 = _p10;
+      var _p15 = _p11.data2;
+      var _p14 = _p11.data1;
+      var _p13 = _p11.command;
+      var _p12 = _p11.channel;
+      var channelEvent = _U.eq(_p13,
+      channelMessages.noteoff) || _U.eq(_p13,
+      channelMessages.noteon) && _U.eq(_p15,0) ? A3(NoteOff,
+      _p12,
+      _p14,
+      A2($Basics.rem,_p15,127)) : _U.eq(_p13,
+      channelMessages.noteon) ? A3(NoteOn,
+      _p12,
+      _p14,
+      A2($Basics.rem,_p15,127)) : _U.eq(_p13,
+      channelMessages.keyaftertouch) ? A3(PolyAfter,
+      _p12,
+      _p14,
+      A2($Basics.rem,_p15,127)) : _U.eq(_p13,
+      channelMessages.controlchange) && (_U.cmp(_p14,
+      0) > -1 && _U.cmp(_p14,119) < 1) ? A3(Control,
+      _p12,
+      _p14,
+      _p15) : _U.eq(_p13,channelMessages.channelmode) && (_U.cmp(_p14,
+      120) > -1 && _U.cmp(_p14,127) < 1) ? A3(Mode,
+      _p12,
+      _p14,
+      _p15) : _U.eq(_p13,
+      channelMessages.programchange) ? A2(ProgChange,
+      _p12,
+      _p14) : _U.eq(_p13,
+      channelMessages.channelaftertouch) ? A2(MonoAfter,
+      _p12,
+      A2($Basics.rem,_p14,127)) : _U.eq(_p13,
+      channelMessages.pitchbend) ? A2(PitchBend,
+      _p12,
+      A2($Basics.rem,
+      _p15 * 128 + _p14 - 8192,
+      8192)) : UnknownChEv($Basics.toString(_p13));
+      return {ctor: "_Tuple2",_0: _p11.timestamp,_1: channelEvent};
+   };
+   var Ticks = function (a) {    return {ctor: "Ticks",_0: a};};
+   var MidiFile = F2(function (a,b) {
+      return {ctor: "MidiFile",_0: a,_1: b};
+   });
+   return _elm.MidiEvent.values = {_op: _op
+                                  ,MidiFile: MidiFile
+                                  ,Ticks: Ticks
+                                  ,NoteOff: NoteOff
+                                  ,NoteOn: NoteOn
+                                  ,PolyAfter: PolyAfter
+                                  ,ProgChange: ProgChange
+                                  ,Control: Control
+                                  ,PitchBend: PitchBend
+                                  ,MonoAfter: MonoAfter
+                                  ,Mode: Mode
+                                  ,UnknownChEv: UnknownChEv
+                                  ,Sysex: Sysex
+                                  ,Timecode: Timecode
+                                  ,Songposition: Songposition
+                                  ,Songselect: Songselect
+                                  ,Tuningrequest: Tuningrequest
+                                  ,Sysexend: Sysexend
+                                  ,Clock: Clock
+                                  ,Start: Start
+                                  ,Continue: Continue
+                                  ,Stop: Stop
+                                  ,Activesensing: Activesensing
+                                  ,Reset: Reset
+                                  ,UnknownSysEv: UnknownSysEv
+                                  ,SequenceNum: SequenceNum
+                                  ,TextEvent: TextEvent
+                                  ,Copyright: Copyright
+                                  ,TrackName: TrackName
+                                  ,InstrName: InstrName
+                                  ,Lyric: Lyric
+                                  ,Marker: Marker
+                                  ,CuePoint: CuePoint
+                                  ,EndOfTrack: EndOfTrack
+                                  ,SetTempo: SetTempo
+                                  ,SMPTEOffset: SMPTEOffset
+                                  ,TimeSig: TimeSig
+                                  ,SequencerSpecific: SequencerSpecific
+                                  ,channelMessages: channelMessages
+                                  ,decodeChannelEvent: decodeChannelEvent
+                                  ,encodeChannelEvent: encodeChannelEvent
+                                  ,systemMessages: systemMessages
+                                  ,decodeSystemEvent: decodeSystemEvent
+                                  ,encodeSystemEvent: encodeSystemEvent};
+};
 Elm.Piano = Elm.Piano || {};
 Elm.Piano.make = function (_elm) {
    "use strict";
@@ -14324,6 +14990,19 @@ Elm.Piano.make = function (_elm) {
    _op["=>"] = F2(function (v0,v1) {
       return {ctor: "_Tuple2",_0: v0,_1: v1};
    });
+   var TimeRef = function (a) {
+      return {ctor: "TimeRef",_0: a};
+   };
+   var MouseOff = function (a) {
+      return {ctor: "MouseOff",_0: a};
+   };
+   var MouseOn = function (a) {
+      return {ctor: "MouseOn",_0: a};
+   };
+   var PithOff = function (a) {
+      return {ctor: "PithOff",_0: a};
+   };
+   var PithOn = function (a) {    return {ctor: "PithOn",_0: a};};
    var NoOp = {ctor: "NoOp"};
    var sendToMidi = F3(function (ctor,address,pitches) {
       var play = function (p) {
@@ -14341,10 +15020,7 @@ Elm.Piano.make = function (_elm) {
    var update = F2(function (action,model) {
       var _p1 = A2($Debug.log,"act_piano",action);
       switch (_p1.ctor)
-      {case "None": return {ctor: "_Tuple2"
-                           ,_0: model
-                           ,_1: $Effects.none};
-         case "PithOn": var _p2 = _p1._0;
+      {case "PithOn": var _p2 = _p1._0;
            return {ctor: "_Tuple2"
                   ,_0: _U.update(model,
                   {pressedKeys: A2($Basics._op["++"],_p2,model.pressedKeys)})
@@ -14377,20 +15053,6 @@ Elm.Piano.make = function (_elm) {
                                 ,_1: $Effects.none};
          default: return {ctor: "_Tuple2",_0: model,_1: $Effects.none};}
    });
-   var TimeRef = function (a) {
-      return {ctor: "TimeRef",_0: a};
-   };
-   var MouseOff = function (a) {
-      return {ctor: "MouseOff",_0: a};
-   };
-   var MouseOn = function (a) {
-      return {ctor: "MouseOn",_0: a};
-   };
-   var PithOff = function (a) {
-      return {ctor: "PithOff",_0: a};
-   };
-   var PithOn = function (a) {    return {ctor: "PithOn",_0: a};};
-   var None = {ctor: "None"};
    var keyName = function (p) {
       var _p5 = p;
       switch (_p5.ctor)
@@ -14677,13 +15339,12 @@ Elm.Piano.make = function (_elm) {
                               ,codeSpetialKeys: codeSpetialKeys
                               ,fromCodeSpetial: fromCodeSpetial
                               ,keyName: keyName
-                              ,None: None
+                              ,NoOp: NoOp
                               ,PithOn: PithOn
                               ,PithOff: PithOff
                               ,MouseOn: MouseOn
                               ,MouseOff: MouseOff
                               ,TimeRef: TimeRef
-                              ,NoOp: NoOp
                               ,update: update
                               ,sendToMidi: sendToMidi
                               ,view: view
@@ -15158,6 +15819,7 @@ Elm.Main.make = function (_elm) {
    $Effects = Elm.Effects.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $IntervalAnimation = Elm.IntervalAnimation.make(_elm),
    $Keyboard = Elm.Keyboard.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
@@ -15203,6 +15865,9 @@ Elm.Main.make = function (_elm) {
       ev));
    });
    var NoOp = {ctor: "NoOp"};
+   var IntervalAnimation = function (a) {
+      return {ctor: "IntervalAnimation",_0: a};
+   };
    var Keyboard = function (a) {
       return {ctor: "Keyboard",_0: a};
    };
@@ -15246,9 +15911,16 @@ Elm.Main.make = function (_elm) {
       _U.list([A2($MidiConnector.view,
               A2($Signal.forwardTo,address,Connector),
               model.midiConnector)
-              ,A2($Piano.view,
-              A2($Signal.forwardTo,address,Piano),
-              model.piano)]));
+              ,A2($Html.div,
+              _U.list([$Html$Attributes.style(_U.list([A2(_op["=>"],
+              "flex-wrap",
+              "wrap")]))]),
+              _U.list([A2($IntervalAnimation.view,
+                      A2($Signal.forwardTo,address,IntervalAnimation),
+                      model.intervals)
+                      ,A2($Piano.view,
+                      A2($Signal.forwardTo,address,Piano),
+                      model.piano)]))]));
    });
    var pianoKeyMap = $Piano.defaultMap0;
    var pianoKeyToPitch = $Piano.expandKeyMap(pianoKeyMap);
@@ -15279,52 +15951,63 @@ Elm.Main.make = function (_elm) {
            return {ctor: "_Tuple2"
                   ,_0: _U.update(model,{piano: piano})
                   ,_1: A2($Effects.map,Piano,fx)};
-         case "Keyboard": var _p9 = _p4._0;
-           var shift = A2($Set.member,16,_p9);
+         case "IntervalAnimation":
+         var _p7 = A2($IntervalAnimation.update,_p4._0,model.intervals);
+           var intervals = _p7._0;
+           var fx = _p7._1;
+           return {ctor: "_Tuple2"
+                  ,_0: _U.update(model,{intervals: intervals})
+                  ,_1: A2($Effects.map,IntervalAnimation,fx)};
+         case "Keyboard": var _p10 = _p4._0;
+           var shift = A2($Set.member,16,_p10);
            var pressed = charToPitch(A2(keyEventToChar,
            shift,
-           A2($Set.diff,_p9,model.keyCodes)));
-           var _p7 = $Basics.not($List.isEmpty(pressed)) ? A2($Piano.update,
+           A2($Set.diff,_p10,model.keyCodes)));
+           var _p8 = $Basics.not($List.isEmpty(pressed)) ? A2($Piano.update,
            $Piano.PithOn(pressed),
            model.piano) : {ctor: "_Tuple2"
                           ,_0: model.piano
                           ,_1: $Effects.none};
-           var piano = _p7._0;
-           var fx = _p7._1;
+           var piano = _p8._0;
+           var fx = _p8._1;
            var lifted = charToPitch(A2(keyEventToChar,
            shift,
-           A2($Set.diff,model.keyCodes,_p9)));
-           var _p8 = $Basics.not($List.isEmpty(lifted)) ? A2($Piano.update,
+           A2($Set.diff,model.keyCodes,_p10)));
+           var _p9 = $Basics.not($List.isEmpty(lifted)) ? A2($Piano.update,
            $Piano.PithOff(lifted),
            piano) : {ctor: "_Tuple2",_0: piano,_1: $Effects.none};
-           var piano$ = _p8._0;
-           var fx$ = _p8._1;
+           var piano$ = _p9._0;
+           var fx$ = _p9._1;
            return {ctor: "_Tuple2"
-                  ,_0: _U.update(model,{keyCodes: _p9,piano: piano$})
+                  ,_0: _U.update(model,{keyCodes: _p10,piano: piano$})
                   ,_1: $Effects.batch(_U.list([A2($Effects.map,Piano,fx)
                                               ,A2($Effects.map,Piano,fx$)]))};
          default: return {ctor: "_Tuple2",_0: model,_1: $Effects.none};}
    });
-   var Model = F3(function (a,b,c) {
-      return {midiConnector: a,piano: b,keyCodes: c};
+   var Model = F4(function (a,b,c,d) {
+      return {midiConnector: a,piano: b,intervals: c,keyCodes: d};
    });
    var init = function () {
-      var _p10 = A4($Piano.init,
+      var _p11 = A2($IntervalAnimation.init,2,5);
+      var intervals = _p11._0;
+      var intervalsFx = _p11._1;
+      var _p12 = A4($Piano.init,
       2,
       5,
       $Maybe.Just(pianoKeyMap),
       midiOut.address);
-      var piano = _p10._0;
-      var pianoFx = _p10._1;
-      var _p11 = A2($MidiConnector.init,midiOut.signal,sysOut.signal);
-      var connector = _p11._0;
-      var connectorFx = _p11._1;
+      var piano = _p12._0;
+      var pianoFx = _p12._1;
+      var _p13 = A2($MidiConnector.init,midiOut.signal,sysOut.signal);
+      var connector = _p13._0;
+      var connectorFx = _p13._1;
       return {ctor: "_Tuple2"
-             ,_0: A3(Model,connector,piano,$Set.empty)
+             ,_0: A4(Model,connector,piano,intervals,$Set.empty)
              ,_1: $Effects.batch(_U.list([A2($Effects.map,
                                          Connector,
                                          connectorFx)
-                                         ,A2($Effects.map,Piano,pianoFx)]))};
+                                         ,A2($Effects.map,Piano,pianoFx)
+                                         ,A2($Effects.map,IntervalAnimation,intervalsFx)]))};
    }();
    var app = $StartApp.start({init: init
                              ,update: update
@@ -15340,6 +16023,7 @@ Elm.Main.make = function (_elm) {
                              ,Connector: Connector
                              ,Piano: Piano
                              ,Keyboard: Keyboard
+                             ,IntervalAnimation: IntervalAnimation
                              ,NoOp: NoOp
                              ,update: update
                              ,pianoKeyToPitch: pianoKeyToPitch
