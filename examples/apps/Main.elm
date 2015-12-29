@@ -167,7 +167,6 @@ port sysOutPort : Signal SystemMessage
 port sysOutPort = sysOut.signal
 
 
-
 -- VIEW
 (=>) : a -> b -> ( a, b )
 (=>) = (,)
@@ -178,9 +177,10 @@ view address model =
       [ MidiConnector.view (Signal.forwardTo address Connector) model.midiConnector
       , div [ style [ "flex-wrap" => "wrap" ] ]
             [
-             IntervalAnimation.view (Signal.forwardTo address IntervalAnimation)
-                               model.intervals
-            , Piano.view (Signal.forwardTo address Piano) model.piano
+             -- IntervalAnimation.view (Signal.forwardTo address IntervalAnimation)
+             --                   model.intervals
+             -- ,
+             Piano.view (Signal.forwardTo address Piano) model.piano
             ]
 
       ]

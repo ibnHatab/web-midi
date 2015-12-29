@@ -9984,7 +9984,6 @@ Elm.Keyboard.make = function (_elm) {
    return _elm.Keyboard.values = {_op: _op
                                  ,arrows: arrows
                                  ,wasd: wasd
-                                 ,rawEvents: rawEvents
                                  ,enter: enter
                                  ,space: space
                                  ,ctrl: ctrl
@@ -14261,7 +14260,7 @@ Elm.IntervalAnimation.make = function (_elm) {
       A2($Animation.timeRemaining,0,prev),
       A2($Animation.to,val,prev));
    }),
-   A2($Animation.speed,0.5,$Animation.$static(0)),
+   A2($Animation.speed,1.5,$Animation.$static(0)),
    A2($List.map,
    function (x) {
       return $Basics.toFloat(x) * 80;
@@ -15915,12 +15914,9 @@ Elm.Main.make = function (_elm) {
               _U.list([$Html$Attributes.style(_U.list([A2(_op["=>"],
               "flex-wrap",
               "wrap")]))]),
-              _U.list([A2($IntervalAnimation.view,
-                      A2($Signal.forwardTo,address,IntervalAnimation),
-                      model.intervals)
-                      ,A2($Piano.view,
-                      A2($Signal.forwardTo,address,Piano),
-                      model.piano)]))]));
+              _U.list([A2($Piano.view,
+              A2($Signal.forwardTo,address,Piano),
+              model.piano)]))]));
    });
    var pianoKeyMap = $Piano.defaultMap0;
    var pianoKeyToPitch = $Piano.expandKeyMap(pianoKeyMap);

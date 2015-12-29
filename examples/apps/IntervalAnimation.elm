@@ -41,7 +41,7 @@ animations : List Animation
 animations =
     List.scanl
         (\val prev -> prev |> to val |> Animation.delay (timeRemaining 0 prev))
-        (static 0 |> speed 0.5)
+        (static 0 |> speed 1.5)
         (List.map (\x -> toFloat x * 80) data) -- size up to bar length now for smoother animation
 
 
